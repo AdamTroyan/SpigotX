@@ -1,3 +1,4 @@
+[![](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)
 # SpigotX
 
 **SpigotX** is a Java library for Spigot/Bukkit designed to simplify plugin development by providing easy-to-use modules for commands, GUI, and events. It is a fully external library that can be added as a dependency to your project.
