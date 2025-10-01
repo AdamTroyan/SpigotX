@@ -9,9 +9,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public class CommandManager {
+
     private final Map<String, Method> commands = new HashMap<>();
     private final Object executor;
     private final JavaPlugin plugin;
@@ -31,8 +32,21 @@ public class CommandManager {
                 PluginCommand pluginCommand = plugin.getCommand(cmd.name());
                 if (pluginCommand != null) {
                     pluginCommand.setExecutor(this::executeCommand);
+                    pluginCommand.setTabCompleter((sender, command, alias, args) -> {
+                        if (method.isAnnotationPresent(TabComplete.class)) {
+                            try {
+                                Object result = method.getAnnotation(TabComplete.class)
+                                        .handler().getDeclaredConstructor().newInstance()
+                                        .complete(sender, args);
+                                if (result instanceof java.util.List<?> list) {
+                                    return list.stream().map(Object::toString).toList();
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                        return java.util.Collections.emptyList();
+                    });
                 } else {
-                    Bukkit.getLogger().warning("[SpigotX] Command " + cmd.name() + " not found in plugin.yml!");
+                    Bukkit.getLogger().warning("[CommandManager] Command " + cmd.name() + " not found in plugin.yml!");
                 }
             }
         }
@@ -42,24 +56,40 @@ public class CommandManager {
         Method method = commands.get(label.toLowerCase());
         if (method == null) return false;
 
-        try {
-            if (method.getParameterCount() == 1 && method.getParameterTypes()[0] == Player.class) {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage("This command can only be run by a player.");
-                    return true;
-                }
-                method.invoke(executor, player);
-            }
-            else if (method.getParameterCount() == 2 && method.getParameterTypes()[1] == String[].class) {
-                method.invoke(executor, sender, args);
-            }
+        Command cmd = method.getAnnotation(Command.class);
 
-            else {
-                method.invoke(executor, sender);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!cmd.permission().isEmpty() && !sender.hasPermission(cmd.permission())) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
+            return true;
         }
+
+        boolean async = method.isAnnotationPresent(AsyncCommand.class);
+
+        Runnable task = () -> {
+            try {
+                if (method.getParameterCount() == 1 && method.getParameterTypes()[0] == Player.class) {
+                    if (!(sender instanceof Player player)) {
+                        sender.sendMessage("§cThis command can only be run by a player.");
+                        return;
+                    }
+                    method.invoke(executor, player);
+                } else if (method.getParameterCount() == 2 && method.getParameterTypes()[1] == String[].class) {
+                    method.invoke(executor, sender, args);
+                } else {
+                    method.invoke(executor, sender);
+                }
+            } catch (Exception e) {
+                sender.sendMessage("§cAn error occurred while executing this command.");
+                e.printStackTrace();
+            }
+        };
+
+        if (async) {
+            CompletableFuture.runAsync(task);
+        } else {
+            task.run();
+        }
+
         return true;
     }
 }

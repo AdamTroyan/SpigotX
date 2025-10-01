@@ -1,7 +1,6 @@
 package dev.adam.gui;
 
 import org.bukkit.entity.Player;
-
 import java.util.function.Consumer;
 
 public class GUIButton {
@@ -13,11 +12,6 @@ public class GUIButton {
         this.action = action;
     }
 
-    public int getSlot() {
-        return slot;
-    }
-
-    public void click(Player player) {
-        action.accept(player);
-    }
+    public int getSlot() { return slot; }
+    public void click(Player player) { action.accept(player); }
 }
