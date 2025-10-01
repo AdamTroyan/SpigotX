@@ -79,7 +79,7 @@ gui.setItem(0, new ItemStack(Material.DIAMOND), ctx -> {
 });
 
 gui.setItem(1, new ItemStack(Material.APPLE), ctx -> {
-    if(ctx.getItem().getType() == Material.APPLE) {
+    if(ctx.getClicked().getType() == Material.APPLE) {
         ctx.getPlayer().sendMessage("Apple clicked!");
     }
 });
@@ -92,10 +92,10 @@ gui.open(player);
 Provides:
 
 * `getPlayer()` – the player who clicked
-* `getItem()` – the clicked ItemStack
+* `getClicked()` – the clicked ItemStack
 * `getSlot()` – the inventory slot
 
-Allows conditional checks like `if(ctx.getItem().getType() == Material.X)`
+Allows conditional checks like `if(ctx.getClicked().getType() == Material.X)`
 
 ---
 
