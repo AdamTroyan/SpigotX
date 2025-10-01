@@ -1,172 +1,241 @@
 [![](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)
 # SpigotX
 
-SpigotX is a powerful and easy-to-use **Spigot/Bukkit library** designed to simplify plugin development. It provides utilities for **commands, GUI management, and event handling**, so you can focus on your plugin logic without repetitive boilerplate.
+SpigotX is a powerful and flexible library for creating **Minecraft Spigot/Bukkit plugins**. It simplifies command handling, event listening, and GUI creation, allowing developers to focus on plugin logic rather than boilerplate code.
 
 ---
 
-## Features
+## Table of Contents
 
-### CommandManager
+* [1. Commands](#1-commands)
+* [2. GUI](#2-gui)
+* [3. Events](#3-events)
+* [4. Complex Functions](#4-complex-functions)
+* [5. Usage](#5-usage)
+* [6. Advantages](#6-advantages)
+* [7. Examples](#7-examples)
+* [8. License](#8-license)
 
-* Register commands using `@Command` annotation.
-* Supports `args` automatically.
-* Works with both `Player` and `CommandSender`.
-* Permission support.
-* Subcommands ready for extension.
+---
 
-**Usage:**
+## 1. Commands
+
+SpigotX provides a **dynamic and modular command system**.
+
+### Key Features
+
+* Register commands using **Annotations** (`@Command`).
+* Supports multiple parameter types:
+
+  * `Player` only
+  * `CommandSender` + `String[] args`
+  * `CommandSender` only
+* Automatic permission checks (`permission()`)
+* Automatic registration via `plugin.yml`
+* Safe execution with error handling
+
+### Example Usage
 
 ```java
 public class MyCommands {
 
     @Command(name = "greet")
-    public void greet(Player player, String[] args) {
-        if(args.length == 0) {
-            player.sendMessage("Hello!");
-        } else {
-            player.sendMessage("Hello " + String.join(" ", args) + "!");
-        }
+    public void greetCommand(Player player) {
+        player.sendMessage("Hello " + player.getName() + "!");
+    }
+
+    @Command(name = "say")
+    public void sayCommand(CommandSender sender, String[] args) {
+        sender.sendMessage("You said: " + String.join(" ", args));
     }
 }
 
-// In your plugin main class
+// Register commands
 new CommandManager(this, new MyCommands());
 ```
 
-**plugin.yml:**
-
-```yaml
-commands:
-  greet:
-    description: Greets the player
-```
-
 ---
 
-### Events
+## 2. GUI
 
-* Simple event registration using lambdas.
-* Covers **Player, Block, Inventory, Vehicle, Weather** events.
-* Examples below show usage.
+The SpigotX GUI system replaces the standard Bukkit Inventory with a modular and flexible system.
 
-**Player Events:**
+### Key Features
 
-```java
-Events.onJoin(player -> player.sendMessage("Welcome!"));
-Events.onQuit(player -> Bukkit.broadcastMessage(player.getName() + " left."));
-Events.onChat((player, message) -> player.sendMessage("You said: " + message));
-Events.onMove((player, event) -> { /* handle movement */ });
-Events.onDamage((player, event) -> { /* handle damage */ });
-Events.onDeath((player, event) -> { /* handle death */ });
-```
+* Supports any Inventory type and size
+* ClickHandlers for custom actions per item
+* Supports both Legacy (Player only) and ClickContext (full context) handling
+* Automatic handling of `InventoryClickEvent` and `InventoryCloseEvent`
+* Custom listeners per GUI
 
-**Block Events:**
-
-```java
-Events.onBlockBreak((player, event) -> player.sendMessage("You broke a block!"));
-Events.onBlockPlace((player, event) -> player.sendMessage("You placed a block!"));
-```
-
-**Inventory Events:**
-
-```java
-Events.onInventoryClick((player, event) -> { /* handle click */ });
-Events.onInventoryClose((player, event) -> { /* handle close */ });
-```
-
-**Vehicle Events:**
-
-```java
-Events.onVehicleEnter((player, event) -> { /* handle enter */ });
-Events.onVehicleExit((player, event) -> { /* handle exit */ });
-```
-
-**Weather Events:**
-
-```java
-Events.onWeatherChange(event -> { /* handle weather change */ });
-```
-
----
-
-### GUI
-
-* Create interactive inventories easily.
-* Attach click actions to items.
-* Supports opening, clearing, and dynamic item updates.
-
-**Usage:**
+### Example Usage
 
 ```java
 GUI gui = new GUI(this, "My Menu", 3);
 
-gui.setItem(0, new ItemStack(Material.DIAMOND), player -> {
-    player.sendMessage("You clicked the diamond!");
+gui.setItem(0, new ItemStack(Material.DIAMOND), ctx -> {
+    Player player = ctx.getPlayer();
+    player.sendMessage("You clicked a diamond!");
+});
+
+gui.setItem(1, new ItemStack(Material.APPLE), ctx -> {
+    if(ctx.getItem().getType() == Material.APPLE) {
+        ctx.getPlayer().sendMessage("Apple clicked!");
+    }
 });
 
 gui.open(player);
 ```
 
-**Additional features:**
+### ClickContext
 
-* Pagination for long lists (planned)
-* onClose callbacks
-* Dynamic item updates
+Provides:
 
----
+* `getPlayer()` – the player who clicked
+* `getItem()` – the clicked ItemStack
+* `getSlot()` – the inventory slot
 
-### GUIButton
-
-* Represents a clickable item in GUI.
-* Simple API using lambdas.
+Allows conditional checks like `if(ctx.getItem().getType() == Material.X)`
 
 ---
 
-## Installation (via JitPack)
+## 3. Events
 
-1. Add the JitPack repository to your `pom.xml`:
+SpigotX provides a unified wrapper for Bukkit events, offering:
 
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
+* Simple and clean registration
+* Functional interface support
+* Predicate filters for selective event handling
+* Supports all common event types:
+
+**Player Events:** Join, Quit, Chat, Move, Teleport, Respawn, Interact, Damage, Death, Hunger
+
+**Inventory Events:** Click, Close
+
+**Block Events:** Break, Place, Damage
+
+**Vehicle Events:** Enter, Exit
+
+**Item Events:** Pickup, Drop, Consume, HeldChange
+
+**Other Events:** PlayerPortal, InteractEntity, CommandPreprocess, WeatherChange
+
+* Automatic management of listener registration/unregistration
+
+### Example Usage
+
+```java
+// Initialize plugin
+Events.init(this);
+
+// Player join event
+Events.onJoin(event -> {
+    Player player = event.getPlayer();
+    player.sendMessage("Welcome!");
+});
+
+// BlockBreak filtered
+Events.register(BlockBreakEvent.class, event -> {
+    event.getPlayer().sendMessage("You broke a diamond block!");
+}, event -> event.getBlock().getType() == Material.DIAMOND_BLOCK);
 ```
 
-2. Add SpigotX as a dependency:
+---
 
-```xml
-<dependency>
-    <groupId>com.github.AdamTroyan</groupId>
-    <artifactId>SpigotX</artifactId>
-    <version>v1.0.3</version>
-</dependency>
+## 4. Complex Functions
+
+### Events
+
+* `register(Class<T> clazz, EventListener<T> listener, Predicate<T> filter)` – register an event with optional filtering
+* `unregisterAll()` – removes all registered listeners
+* `EventListener<T>` – functional interface allowing lambda usage for concise registration
+
+### GUI
+
+* `setItem(int slot, ItemStack item, Consumer<ClickContext> action)` – set item with full context
+* ClickContext provides access to player, item, and slot for advanced logic
+* Custom listeners can be added per GUI
+
+### Commands
+
+* Uses reflection to register methods annotated with `@Command`
+* Supports multiple parameter types and automatic permission handling
+* Handles errors and sender type automatically
+
+---
+
+## 5. Usage
+
+**Main Plugin Class**
+
+```java
+@Override
+public void onEnable() {
+    Events.init(this);
+
+    // Register commands
+    new CommandManager(this, new MyCommands());
+
+    // Example Events
+    Events.onJoin(event -> {
+        event.getPlayer().sendMessage("Welcome!");
+    });
+
+    // GUI
+    GUI gui = new GUI(this, "Main Menu", 3);
+    gui.setItem(0, new ItemStack(Material.DIAMOND), ctx -> {
+        ctx.getPlayer().sendMessage("Diamond clicked!");
+    });
+}
 ```
 
-* Make sure the tag `v1.0.3` exists in your GitHub repository.
+---
+
+## 6. Advantages
+
+* Reduces boilerplate code
+* Functional programming style for events and GUI actions
+* Highly modular – each system is independent
+* Custom filters can be applied to any event
+* Supports all player, inventory, block, vehicle, item, and weather events
 
 ---
 
-## Notes
+## 7. Examples
 
-* Ensure that all commands used with `CommandManager` are defined in `plugin.yml`.
-* Events are automatically registered using Bukkit's event system.
-* GUI actions are thread-safe when triggered from player interactions.
+### Commands
+
+```java
+@Command(name="teleport")
+public void teleportPlayer(Player player, String[] args){
+    if(args.length == 1){
+        Player target = Bukkit.getPlayer(args[0]);
+        if(target != null){
+            player.teleport(target.getLocation());
+        }
+    }
+}
+```
+
+### GUI
+
+```java
+GUI gui = new GUI(this, "Shop", 4);
+gui.setItem(0, new ItemStack(Material.DIAMOND), ctx -> ctx.getPlayer().sendMessage("Bought diamond!"));
+```
+
+### Events
+
+```java
+Events.onDamage(event -> {
+    if(event.getEntity() instanceof Player p){
+        p.sendMessage("You are being attacked!");
+    }
+});
+```
 
 ---
 
-## Future Plans
+## 8. License
 
-* Support for subcommands with automatic help messages.
-* Built-in permission checking and messages.
-* Pagination utilities for GUIs.
-* Expanded event helpers for more Bukkit events.
-
----
-
-## License
-
-MIT License
+SpigotX is open-source and free to use in any Spigot/Bukkit plugin project.
