@@ -142,11 +142,11 @@ gui.open(player);
 <dependency>
     <groupId>com.github.AdamTroyan</groupId>
     <artifactId>SpigotX</artifactId>
-    <version>v1.0.0</version>
+    <version>v1.0.3</version>
 </dependency>
 ```
 
-* Make sure the tag `v1.0.0` exists in your GitHub repository.
+* Make sure the tag `v1.0.3` exists in your GitHub repository.
 
 ---
 
