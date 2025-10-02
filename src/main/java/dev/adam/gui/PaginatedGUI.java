@@ -55,10 +55,10 @@ public class PaginatedGUI {
         for (int i = start; i < end; i++) {
             ItemStack it = content.get(i);
             final int idx = i;
-            gui.setItem(slot++, it, (ClickHandler) ctx -> {});
+            gui.setItem(slot++, it, (Consumer<ClickContext>) ctx -> {});
         }
-        if (prevItem != null && p > 0) gui.setItem(prevSlot, prevItem, (ClickHandler) ctx -> openPage(player, p - 1));
-        if (nextItem != null && p < pages - 1) gui.setItem(nextSlot, nextItem, (ClickHandler) ctx -> openPage(player, p + 1));
+        if (prevItem != null && p > 0) gui.setItem(prevSlot, prevItem, (Consumer<ClickContext>) ctx -> openPage(player, p - 1));
+        if (nextItem != null && p < pages - 1) gui.setItem(nextSlot, nextItem, (Consumer<ClickContext>) ctx -> openPage(player, p + 1));
         if (onPageChange != null) onPageChange.accept(p);
         gui.open(player);
     }

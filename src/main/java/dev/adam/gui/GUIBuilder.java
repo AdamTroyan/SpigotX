@@ -26,12 +26,12 @@ public class GUIBuilder {
     }
 
     public GUIBuilder item(int slot, ItemStack item, java.util.function.Consumer<ClickContext> action) {
-        ops.add(() -> builderGui().setItem(slot, item, (ClickHandler) action));
+        ops.add(() -> builderGui().setItem(slot, item, (Consumer<ClickContext>) action));
         return this;
     }
 
     public GUIBuilder itemLegacy(int slot, ItemStack item, java.util.function.Consumer<org.bukkit.entity.Player> action) {
-        ops.add(() -> builderGui().setItem(slot, item, action));
+        ops.add(() -> builderGui().setItemForPlayer(slot, item, action));
         return this;
     }
 

@@ -27,11 +27,23 @@ public class CommandManager {
         for (Method method : executor.getClass().getMethods()) {
             if (method.isAnnotationPresent(Command.class)) {
                 Command cmd = method.getAnnotation(Command.class);
+
                 commands.put(cmd.name().toLowerCase(), method);
+
+                if (!cmd.aliases().isEmpty()) {
+                    for (String alias : cmd.aliases().split("\\|")) {
+                        commands.put(alias.toLowerCase(), method);
+                    }
+                }
 
                 PluginCommand pluginCommand = plugin.getCommand(cmd.name());
                 if (pluginCommand != null) {
                     pluginCommand.setExecutor(this::executeCommand);
+
+                    if (!cmd.aliases().isEmpty()) {
+                        pluginCommand.setAliases(java.util.Arrays.asList(cmd.aliases().split("\\|")));
+                    }
+
                     pluginCommand.setTabCompleter((sender, command, alias, args) -> {
                         if (method.isAnnotationPresent(TabComplete.class)) {
                             try {
@@ -59,7 +71,10 @@ public class CommandManager {
         Command cmd = method.getAnnotation(Command.class);
 
         if (!cmd.permission().isEmpty() && !sender.hasPermission(cmd.permission())) {
-            sender.sendMessage("§cYou do not have permission to use this command.");
+            String msg = cmd.permissionMessage().isEmpty()
+                    ? "You do not have permission to use this command."
+                    : cmd.permissionMessage();
+            sender.sendMessage(msg);
             return true;
         }
 
@@ -69,7 +84,7 @@ public class CommandManager {
             try {
                 if (method.getParameterCount() == 1 && method.getParameterTypes()[0] == Player.class) {
                     if (!(sender instanceof Player player)) {
-                        sender.sendMessage("§cThis command can only be run by a player.");
+                        sender.sendMessage("This command can only be run by a player.");
                         return;
                     }
                     method.invoke(executor, player);
@@ -79,7 +94,7 @@ public class CommandManager {
                     method.invoke(executor, sender);
                 }
             } catch (Exception e) {
-                sender.sendMessage("§cAn error occurred while executing this command.");
+                sender.sendMessage("An error occurred while executing this command.");
                 e.printStackTrace();
             }
         };

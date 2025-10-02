@@ -46,30 +46,38 @@ public class GUI implements InventoryHolder {
 
     // ---------------- API ----------------
 
-    public GUI setItem(int slot, ItemStack item, ClickHandler action) {
-        if (item != null) {
-            item = item.clone();
-        }
+    public GUI setItem(int slot, ItemStack item, Consumer<ClickContext> action) {
+        if (item != null) item = item.clone();
         inventory.setItem(slot, item);
-        if (action != null) slotHandlers.put(slot, action::accept);
+
+        if (action != null) slotHandlers.put(slot, action);
         else slotHandlers.remove(slot);
+
+        legacyButtons.remove(slot);
+
         return this;
     }
 
-    public GUI setItem(int slot, ItemStack item, java.util.function.Consumer<Player> action) {
-        if (item != null) {
-            item = item.clone();
-        }
+    public GUI setItemForPlayer(int slot, ItemStack item, Consumer<Player> action) {
+        if (item != null) item = item.clone();
         inventory.setItem(slot, item);
-        if (action != null) legacyButtons.put(slot, new GUIButton(slot, action));
-        else legacyButtons.remove(slot);
+
+        if (action != null) {
+            slotHandlers.put(slot, ctx -> {
+                if (ctx.getPlayer() != null) action.accept(ctx.getPlayer());
+            });
+        } else {
+            slotHandlers.remove(slot);
+        }
+        legacyButtons.remove(slot);
+
         return this;
     }
 
-    public boolean addItem(ItemStack item, java.util.function.Consumer<ClickContext> action) {
+    public boolean addItem(ItemStack item, Consumer<ClickContext> action) {
         int empty = inventory.firstEmpty();
         if (empty == -1) return false;
-        setItem(empty, item, (ClickHandler) action);
+        setItem(empty, item, action);
         return true;
     }
 
@@ -103,7 +111,7 @@ public class GUI implements InventoryHolder {
     public void fillRow(int row, ItemStack item, java.util.function.Consumer<ClickContext> action) {
         int cols = 9;
         int start = row * cols;
-        for (int i = 0; i < cols; i++) setItem(start + i, item, (ClickHandler) action);
+        for (int i = 0; i < cols; i++) setItem(start + i, item, action);
     }
 
     public void fillBorder(ItemStack item, java.util.function.Consumer<ClickContext> action) {
@@ -113,7 +121,7 @@ public class GUI implements InventoryHolder {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < 9; c++) {
                 int slot = r * 9 + c;
-                if (r == 0 || r == rows - 1 || c == 0 || c == 8) setItem(slot, item, (ClickHandler) action);
+                if (r == 0 || r == rows - 1 || c == 0 || c == 8) setItem(slot, item, action);
             }
         }
     }
