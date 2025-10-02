@@ -7,8 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class CommandManager {
@@ -25,42 +24,56 @@ public class CommandManager {
 
     private void registerCommands() {
         for (Method method : executor.getClass().getMethods()) {
-            if (method.isAnnotationPresent(Command.class)) {
-                Command cmd = method.getAnnotation(Command.class);
+            if (!method.isAnnotationPresent(Command.class)) continue;
 
-                commands.put(cmd.name().toLowerCase(), method);
+            Command cmd = method.getAnnotation(Command.class);
+            String mainName = cmd.name().toLowerCase();
 
-                if (!cmd.aliases().isEmpty()) {
-                    for (String alias : cmd.aliases().split("\\|")) {
-                        commands.put(alias.toLowerCase(), method);
+            commands.put(mainName, method);
+
+            List<String> aliasList = new ArrayList<>();
+            if (!cmd.aliases().isEmpty()) {
+                for (String alias : cmd.aliases().split("\\|")) {
+                    alias = alias.trim().toLowerCase();
+                    if (!alias.isEmpty()) {
+                        commands.put(alias, method);
+                        aliasList.add(alias);
                     }
-                }
-
-                PluginCommand pluginCommand = plugin.getCommand(cmd.name());
-                if (pluginCommand != null) {
-                    pluginCommand.setExecutor(this::executeCommand);
-
-                    if (!cmd.aliases().isEmpty()) {
-                        pluginCommand.setAliases(java.util.Arrays.asList(cmd.aliases().split("\\|")));
-                    }
-
-                    pluginCommand.setTabCompleter((sender, command, alias, args) -> {
-                        if (method.isAnnotationPresent(TabComplete.class)) {
-                            try {
-                                Object result = method.getAnnotation(TabComplete.class)
-                                        .handler().getDeclaredConstructor().newInstance()
-                                        .complete(sender, args);
-                                if (result instanceof java.util.List<?> list) {
-                                    return list.stream().map(Object::toString).toList();
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                        return java.util.Collections.emptyList();
-                    });
-                } else {
-                    Bukkit.getLogger().warning("[CommandManager] Command " + cmd.name() + " not found in plugin.yml!");
                 }
             }
+
+            PluginCommand pluginCommand = plugin.getCommand(cmd.name());
+            if (pluginCommand == null) {
+                Bukkit.getLogger().warning("[CommandManager] Command " + cmd.name() + " not found in plugin.yml!");
+                continue;
+            }
+
+            pluginCommand.setExecutor(this::executeCommand);
+
+            if (!aliasList.isEmpty()) {
+                pluginCommand.setAliases(aliasList);
+            }
+
+            pluginCommand.setDescription(cmd.description());
+            pluginCommand.setUsage(cmd.usage());
+            if (!cmd.permission().isEmpty()) {
+                pluginCommand.setPermission(cmd.permission());
+                pluginCommand.setPermissionMessage(cmd.permissionMessage());
+            }
+
+            pluginCommand.setTabCompleter((sender, command, label, args) -> {
+                if (method.isAnnotationPresent(TabComplete.class)) {
+                    try {
+                        Object result = method.getAnnotation(TabComplete.class)
+                                .handler().getDeclaredConstructor().newInstance()
+                                .complete(sender, args);
+                        if (result instanceof List<?> list) {
+                            return list.stream().map(Object::toString).toList();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                return Collections.emptyList();
+            });
         }
     }
 
