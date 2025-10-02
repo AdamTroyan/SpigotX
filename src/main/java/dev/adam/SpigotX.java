@@ -28,10 +28,6 @@ public class SpigotX {
         return pluginInstance;
     }
 
-    public static <T extends org.bukkit.event.Event> void onEvent(dev.adam.events.Events.EventListener<T> listener, Class<T> clazz) {
-        dev.adam.events.Events.register(clazz, listener);
-    }
-
     public static void registerCommands(Object executor) {
         if (pluginInstance == null) {
             throw new IllegalStateException("SpigotX.init(plugin) must be called first!");
