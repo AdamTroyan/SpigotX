@@ -1,7 +1,8 @@
 [![](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)
 # SpigotX
 
-SpigotX is a powerful and flexible library for creating **Minecraft Spigot/Bukkit plugins**. It simplifies command handling, event listening, and GUI creation, allowing developers to focus on plugin logic rather than boilerplate code.
+SpigotX is a powerful and flexible library for creating **Minecraft Spigot/Bukkit plugins**.  
+It simplifies command handling, event listening, and GUI creation, allowing developers to focus on plugin logic rather than boilerplate code.
 
 ---
 
@@ -27,11 +28,11 @@ SpigotX provides a **dynamic and modular command system**.
 
 * Register commands using **Annotations** (`@Command`).
 * Supports multiple parameter types:
-
   * `Player` only
   * `CommandSender` + `String[] args`
   * `CommandSender` only
 * Automatic permission checks (`permission()`)
+* Aliases supported (`aliases = "jbs|job|jobs"`)
 * Automatic registration via `plugin.yml`
 * Safe execution with error handling
 
@@ -40,12 +41,12 @@ SpigotX provides a **dynamic and modular command system**.
 ```java
 public class MyCommands {
 
-    @Command(name = "greet")
+    @Command(name = "greet", description = "Say hello")
     public void greetCommand(Player player) {
         player.sendMessage("Hello " + player.getName() + "!");
     }
 
-    @Command(name = "say")
+    @Command(name = "say", aliases = "s|speak", permission = "myplugin.say")
     public void sayCommand(CommandSender sender, String[] args) {
         sender.sendMessage("You said: " + String.join(" ", args));
     }
@@ -68,6 +69,7 @@ The SpigotX GUI system replaces the standard Bukkit Inventory with a modular and
 * Supports both Legacy (Player only) and ClickContext (full context) handling
 * Automatic handling of `InventoryClickEvent` and `InventoryCloseEvent`
 * Custom listeners per GUI
+* Built-in support for animations
 
 ### Example Usage
 
@@ -95,8 +97,8 @@ Provides:
 * `getPlayer()` – the player who clicked
 * `getClicked()` – the clicked ItemStack
 * `getSlot()` – the inventory slot
-
-Allows conditional checks like `if(ctx.getClicked().getType() == Material.X)`
+* `isShiftClick()` – was shift used
+* `getAction()` – action type (MOVE, PLACE, SWAP, etc.)
 
 ---
 
@@ -108,18 +110,12 @@ SpigotX provides a unified wrapper for Bukkit events, offering:
 * Functional interface support
 * Predicate filters for selective event handling
 * Supports all common event types:
-
-**Player Events:** Join, Quit, Chat, Move, Teleport, Respawn, Interact, Damage, Death, Hunger
-
-**Inventory Events:** Click, Close
-
-**Block Events:** Break, Place, Damage
-
-**Vehicle Events:** Enter, Exit
-
-**Item Events:** Pickup, Drop, Consume, HeldChange
-
-**Other Events:** PlayerPortal, InteractEntity, CommandPreprocess, WeatherChange
+  * **Player Events:** Join, Quit, Chat, Move, Teleport, Respawn, Interact, Damage, Death, Hunger
+  * **Inventory Events:** Click, Close
+  * **Block Events:** Break, Place, Damage
+  * **Vehicle Events:** Enter, Exit
+  * **Item Events:** Pickup, Drop, Consume, HeldChange
+  * **Other Events:** PlayerPortal, InteractEntity, CommandPreprocess, WeatherChange
 
 * Automatic management of listener registration/unregistration
 
@@ -146,22 +142,20 @@ Events.register(BlockBreakEvent.class, event -> {
 ## 4. Complex Functions
 
 ### Events
-
-* `register(Class<T> clazz, EventListener<T> listener, Predicate<T> filter)` – register an event with optional filtering
-* `unregisterAll()` – removes all registered listeners
-* `EventListener<T>` – functional interface allowing lambda usage for concise registration
+* `register(Class<T> clazz, EventListener<T> listener, Predicate<T> filter)` – register an event with optional filtering  
+* `unregisterAll()` – removes all registered listeners  
+* `EventListener<T>` – functional interface allowing lambda usage for concise registration  
 
 ### GUI
-
-* `setItem(int slot, ItemStack item, Consumer<ClickContext> action)` – set item with full context
-* ClickContext provides access to player, item, and slot for advanced logic
-* Custom listeners can be added per GUI
+* `setItem(int slot, ItemStack item, Consumer<ClickContext> action)` – set item with full context  
+* `setAnimation(int slot, Animation animation)` – run item animations  
+* Custom listeners can be added per GUI  
 
 ### Commands
-
-* Uses reflection to register methods annotated with `@Command`
-* Supports multiple parameter types and automatic permission handling
-* Handles errors and sender type automatically
+* Uses reflection to register methods annotated with `@Command`  
+* Supports multiple parameter types and automatic permission handling  
+* Handles errors and sender type automatically  
+* Supports aliases and async execution (`@AsyncCommand`)  
 
 ---
 
@@ -194,11 +188,13 @@ public void onEnable() {
 
 ## 6. Advantages
 
-* Reduces boilerplate code
-* Functional programming style for events and GUI actions
-* Highly modular – each system is independent
-* Custom filters can be applied to any event
-* Supports all player, inventory, block, vehicle, item, and weather events
+* Reduces boilerplate code  
+* Functional programming style for events and GUI actions  
+* Highly modular – each system is independent  
+* Custom filters can be applied to any event  
+* Supports aliases, permissions, async commands  
+* Built-in placeholders for GUI item names and lores  
+* Automatic cleanup/unregistration  
 
 ---
 
@@ -207,7 +203,7 @@ public void onEnable() {
 ### Commands
 
 ```java
-@Command(name="teleport")
+@Command(name="teleport", aliases="tp|tpto", permission="myplugin.tp")
 public void teleportPlayer(Player player, String[] args){
     if(args.length == 1){
         Player target = Bukkit.getPlayer(args[0]);
@@ -236,11 +232,13 @@ Events.onDamage(event -> {
 ```
 
 ---
+
 ## 8. Adding via Maven or Gradle
-You can add SpigotX to your project easily using JitPack
+
+You can add SpigotX to your project easily using **JitPack**.
 
 **Gradle**
-```
+```gradle
 repositories {
     maven { url 'https://jitpack.io' }
 }
@@ -251,7 +249,7 @@ dependencies {
 ```
 
 **Maven**
-```
+```xml
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -268,8 +266,8 @@ dependencies {
 </dependencies>
 ```
 
-Replace Tag with the release version or commit hash you want to use.
-Example: v1.0.0
+Replace `Tag` with the release version or commit hash you want to use.  
+Example: `v1.0.0`
 
 ---
 
