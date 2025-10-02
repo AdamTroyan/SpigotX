@@ -1,7 +1,6 @@
 package dev.adam.gui;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
@@ -10,7 +9,10 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -54,7 +56,6 @@ public class GUI implements InventoryHolder {
         else slotHandlers.remove(slot);
 
         legacyButtons.remove(slot);
-
         return this;
     }
 
@@ -62,15 +63,12 @@ public class GUI implements InventoryHolder {
         if (item != null) item = item.clone();
         inventory.setItem(slot, item);
 
-        if (action != null) {
-            slotHandlers.put(slot, ctx -> {
-                if (ctx.getPlayer() != null) action.accept(ctx.getPlayer());
-            });
-        } else {
-            slotHandlers.remove(slot);
-        }
-        legacyButtons.remove(slot);
+        if (action != null) slotHandlers.put(slot, ctx -> {
+            if (ctx.getPlayer() != null) action.accept(ctx.getPlayer());
+        });
+        else slotHandlers.remove(slot);
 
+        legacyButtons.remove(slot);
         return this;
     }
 
@@ -85,7 +83,7 @@ public class GUI implements InventoryHolder {
         inventory.clear(slot);
         slotHandlers.remove(slot);
         legacyButtons.remove(slot);
-        animations.remove(slot);
+        removeAnimation(slot);
     }
 
     public void clear() {
@@ -105,16 +103,17 @@ public class GUI implements InventoryHolder {
     }
 
     public void closeAll() {
-        for (HumanEntity viewer : new ArrayList<>(inventory.getViewers())) viewer.closeInventory();
+        for (HumanEntity viewer : new ArrayList<>(inventory.getViewers()))
+            viewer.closeInventory();
     }
 
-    public void fillRow(int row, ItemStack item, java.util.function.Consumer<ClickContext> action) {
+    public void fillRow(int row, ItemStack item, Consumer<ClickContext> action) {
         int cols = 9;
         int start = row * cols;
         for (int i = 0; i < cols; i++) setItem(start + i, item, action);
     }
 
-    public void fillBorder(ItemStack item, java.util.function.Consumer<ClickContext> action) {
+    public void fillBorder(ItemStack item, Consumer<ClickContext> action) {
         int size = inventory.getSize();
         int rows = size / 9;
         if (rows <= 0) return;
@@ -133,28 +132,28 @@ public class GUI implements InventoryHolder {
             Animation an = animations.get(slot);
             if (an != null) {
                 an.advance();
-                ItemStack frame = an.current();
-                inventory.setItem(slot, frame);
+                inventory.setItem(slot, an.current());
             }
         });
     }
 
-    public void removeAnimation(int slot) {
-        animations.remove(slot);
-    }
+    public void removeAnimation(int slot) { animations.remove(slot); }
 
-    // config setters
+    // ---------------- Config ----------------
+
     public void setDefaultCancel(boolean defaultCancel) { this.defaultCancel = defaultCancel; }
     public void setAllowShiftClick(boolean allow) { this.allowShiftClick = allow; }
     public void setAllowDrag(boolean allow) { this.allowDrag = allow; }
     public void setAutoUnregisterWhenEmpty(boolean autoUnregisterWhenEmpty) { this.autoUnregisterWhenEmpty = autoUnregisterWhenEmpty; }
 
-    // handlers
+    // ---------------- Handlers ----------------
+
     public void setGlobalClickHandler(Consumer<ClickContext> handler) { this.globalClickHandler = handler; }
     public void setOnOpen(Consumer<Player> onOpen) { this.onOpen = onOpen; }
     public void setOnClose(Consumer<Player> onClose) { this.onClose = onClose; }
 
-    // placeholders
+    // ---------------- Placeholders ----------------
+
     private void applyPlaceholdersToPlayer(Player p) {
         PlaceholderManager pm = PlaceholderManager.get();
         for (int i = 0; i < inventory.getSize(); i++) {
@@ -163,7 +162,7 @@ public class GUI implements InventoryHolder {
             ItemStack clone = it.clone();
 
             if (clone.hasItemMeta()) {
-                org.bukkit.inventory.meta.ItemMeta meta = clone.getItemMeta();
+                var meta = clone.getItemMeta();
                 if (meta.hasDisplayName()) meta.setDisplayName(pm.apply(p, meta.getDisplayName()));
                 if (meta.hasLore()) {
                     List<String> lore = meta.getLore();
@@ -173,26 +172,22 @@ public class GUI implements InventoryHolder {
                 }
                 clone.setItemMeta(meta);
             }
+
             inventory.setItem(i, clone);
         }
     }
 
-    // ---------------- Internal event handling ----------------
+    // ---------------- Event Handling ----------------
 
-    void handleClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+    void handleClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
         int raw = e.getRawSlot();
-        int size = inventory.getSize();
-        boolean top = raw >= 0 && raw < size;
-        int slotInView = e.getSlot();
-        ItemStack clicked = e.getCurrentItem();
-        ItemStack cursor = e.getCursor();
-
+        boolean top = raw >= 0 && raw < inventory.getSize();
         ClickContext ctx = new ClickContext(
                 player,
-                clicked == null ? new ItemStack(Material.AIR) : clicked.clone(),
-                cursor == null ? new ItemStack(Material.AIR) : cursor.clone(),
-                slotInView,
+                e.getCurrentItem(),
+                e.getCursor(),
+                e.getSlot(),
                 raw,
                 top,
                 e.getClick(),
@@ -205,51 +200,37 @@ public class GUI implements InventoryHolder {
 
         if (top) {
             Consumer<ClickContext> slotHandler = slotHandlers.get(raw);
-            if (slotHandler != null) {
-                try { slotHandler.accept(ctx); } catch (Exception ex) { ex.printStackTrace(); }
-            } else {
+            if (slotHandler != null) slotHandler.accept(ctx);
+            else {
                 GUIButton legacy = legacyButtons.get(raw);
-                if (legacy != null) {
-                    try { legacy.click(player); } catch (Exception ex) { ex.printStackTrace(); }
-                }
+                if (legacy != null) legacy.click(player);
             }
         }
 
-        // global handler
-        if (globalClickHandler != null) {
-            try { globalClickHandler.accept(ctx); } catch (Exception ex) { ex.printStackTrace(); }
-        }
+        if (globalClickHandler != null) globalClickHandler.accept(ctx);
 
-        // shift / drag rules
         if (!allowShiftClick && e.isShiftClick() && top) ctx.setCancelled(true);
-        if (!allowDrag && (e.getAction() == InventoryAction.COLLECT_TO_CURSOR ||
-                e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY)) ctx.setCancelled(true);
+        if (!allowDrag && (e.getAction() == InventoryAction.COLLECT_TO_CURSOR || e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY))
+            ctx.setCancelled(true);
 
         e.setCancelled(ctx.isCancelled());
     }
 
-    void handleDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
+    void handleDrag(InventoryDragEvent e) {
         for (int slot : e.getRawSlots()) {
-            if (slot < inventory.getSize()) {
-                if (!allowDrag) { e.setCancelled(true); return; }
-            }
+            if (slot < inventory.getSize() && !allowDrag) { e.setCancelled(true); return; }
         }
     }
 
-    void handleOpen(org.bukkit.event.inventory.InventoryOpenEvent e) {
+    void handleOpen(InventoryOpenEvent e) {
         if (!(e.getPlayer() instanceof Player player)) return;
-
         applyPlaceholdersToPlayer(player);
-        if (onOpen != null) {
-            try { onOpen.accept(player); } catch (Exception ex) { ex.printStackTrace(); }
-        }
+        if (onOpen != null) onOpen.accept(player);
     }
 
-    void handleClose(org.bukkit.event.inventory.InventoryCloseEvent e) {
+    void handleClose(InventoryCloseEvent e) {
         if (!(e.getPlayer() instanceof Player player)) return;
-        if (onClose != null) {
-            try { onClose.accept(player); } catch (Exception ex) { ex.printStackTrace(); }
-        }
+        if (onClose != null) onClose.accept(player);
         if (autoUnregisterWhenEmpty && inventory.getViewers().isEmpty()) GUIManager.get(plugin).unregister(this);
     }
 }

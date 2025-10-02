@@ -1,11 +1,13 @@
 package dev.adam.commands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -15,11 +17,24 @@ public class CommandManager {
     private final Map<String, Method> commands = new HashMap<>();
     private final Object executor;
     private final JavaPlugin plugin;
+    private final CommandMap commandMap;
 
     public CommandManager(JavaPlugin plugin, Object executor) {
         this.plugin = plugin;
         this.executor = executor;
+        this.commandMap = getCommandMap();
         registerCommands();
+    }
+
+    private CommandMap getCommandMap() {
+        try {
+            Field field = Bukkit.getServer().getClass().getDeclaredField("commandMap");
+            field.setAccessible(true);
+            return (CommandMap) field.get(Bukkit.getServer());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private void registerCommands() {
@@ -44,16 +59,18 @@ public class CommandManager {
 
             PluginCommand pluginCommand = plugin.getCommand(cmd.name());
             if (pluginCommand == null) {
-                Bukkit.getLogger().warning("[CommandManager] Command " + cmd.name() + " not found in plugin.yml!");
-                continue;
+                try {
+                    pluginCommand = PluginCommand.class.getDeclaredConstructor(String.class, JavaPlugin.class)
+                            .newInstance(cmd.name(), plugin);
+                } catch (Exception e) {
+                    Bukkit.getLogger().warning("[CommandManager] Failed to create command " + cmd.name());
+                    e.printStackTrace();
+                    continue;
+                }
             }
 
             pluginCommand.setExecutor(this::executeCommand);
-
-            if (!aliasList.isEmpty()) {
-                pluginCommand.setAliases(aliasList);
-            }
-
+            pluginCommand.setAliases(aliasList);
             pluginCommand.setDescription(cmd.description());
             pluginCommand.setUsage(cmd.usage());
             if (!cmd.permission().isEmpty()) {
@@ -74,6 +91,10 @@ public class CommandManager {
                 }
                 return Collections.emptyList();
             });
+
+            if (commandMap != null) {
+                commandMap.register(plugin.getName(), pluginCommand);
+            }
         }
     }
 

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class GUIBuilder {
+
     private final Plugin plugin;
     private final String title;
     private final int rows;
@@ -25,17 +26,17 @@ public class GUIBuilder {
         return new GUIBuilder(plugin, title, rows);
     }
 
-    public GUIBuilder item(int slot, ItemStack item, java.util.function.Consumer<ClickContext> action) {
-        ops.add(() -> builderGui().setItem(slot, item, (Consumer<ClickContext>) action));
+    public GUIBuilder item(int slot, ItemStack item, Consumer<ClickContext> action) {
+        ops.add(() -> builderGui().setItem(slot, item, action));
         return this;
     }
 
-    public GUIBuilder itemLegacy(int slot, ItemStack item, java.util.function.Consumer<org.bukkit.entity.Player> action) {
+    public GUIBuilder itemLegacy(int slot, ItemStack item, Consumer<Player> action) {
         ops.add(() -> builderGui().setItemForPlayer(slot, item, action));
         return this;
     }
 
-    public GUIBuilder fillBorder(ItemStack item, java.util.function.Consumer<ClickContext> action) {
+    public GUIBuilder fillBorder(ItemStack item, Consumer<ClickContext> action) {
         ops.add(() -> builderGui().fillBorder(item, action));
         return this;
     }

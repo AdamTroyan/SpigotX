@@ -1,12 +1,13 @@
 package dev.adam.gui;
 
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
 public class ClickContext {
+
     private final Player player;
     private final ItemStack clicked;
     private final ItemStack cursor;
@@ -33,8 +34,8 @@ public class ClickContext {
                         InventoryClickEvent event,
                         boolean defaultCancel) {
         this.player = player;
-        this.clicked = clicked;
-        this.cursor = cursor;
+        this.clicked = clicked != null ? clicked.clone() : null;
+        this.cursor = cursor != null ? cursor.clone() : null;
         this.slot = slot;
         this.rawSlot = rawSlot;
         this.top = top;

@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class GUIManager implements Listener {
 
     private static final Map<Plugin, GUIManager> INSTANCES = new ConcurrentHashMap<>();
-
     private final Map<org.bukkit.inventory.Inventory, GUI> registry = new ConcurrentHashMap<>();
     private final Plugin plugin;
 
@@ -25,17 +24,14 @@ public final class GUIManager implements Listener {
         return INSTANCES.computeIfAbsent(plugin, GUIManager::new);
     }
 
-    void register(GUI gui) {
-        registry.put(gui.getInventory(), gui);
+    public void unregisterAll() {
+        registry.keySet().forEach(inv -> registry.remove(inv));
     }
 
-    void unregister(GUI gui) {
-        registry.remove(gui.getInventory());
-    }
+    void register(GUI gui) { if (gui != null) registry.put(gui.getInventory(), gui); }
+    void unregister(GUI gui) { if (gui != null) registry.remove(gui.getInventory()); }
 
-    GUI getGUI(org.bukkit.inventory.Inventory inv) {
-        return registry.get(inv);
-    }
+    GUI getGUI(org.bukkit.inventory.Inventory inv) { return registry.get(inv); }
 
     @EventHandler
     public void onClick(InventoryClickEvent e) {
