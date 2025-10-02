@@ -30,10 +30,10 @@ public class CommandManager {
             if (!method.isAnnotationPresent(Command.class)) continue;
 
             dev.adam.commands.Command annotation = method.getAnnotation(dev.adam.commands.Command.class);
-
             String mainName = annotation.name().toLowerCase();
+
             List<String> aliases = new ArrayList<>();
-            if (!annotation.aliases().isEmpty()) {
+            if (annotation.aliases() != null && !annotation.aliases().isBlank()) {
                 for (String a : annotation.aliases().split("\\|")) {
                     if (!a.isBlank()) aliases.add(a.toLowerCase().trim());
                 }
