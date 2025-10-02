@@ -235,7 +235,43 @@ Events.onDamage(event -> {
 ```
 
 ---
+## 8. Adding via Maven / Gradle (JitPack)
+You can add SpigotX to your project easily using JitPack
 
-## 8. License
+**Gradle**
+```
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.AdamTroyan:SpigotX:Tag'
+}
+```
+
+**Maven**
+```
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.github.AdamTroyan</groupId>
+        <artifactId>SpigotX</artifactId>
+        <version>Tag</version>
+    </dependency>
+</dependencies>
+```
+
+Replace Tag with the release version or commit hash you want to use.
+Example: v1.0.0
+
+---
+
+## 9. License
 
 SpigotX is open-source and free to use in any Spigot/Bukkit plugin project.
