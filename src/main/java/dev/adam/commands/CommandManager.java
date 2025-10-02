@@ -57,43 +57,44 @@ public class CommandManager {
                 }
             }
 
-            PluginCommand pluginCommand = plugin.getCommand(cmd.name());
-            if (pluginCommand == null) {
-                try {
-                    pluginCommand = PluginCommand.class.getDeclaredConstructor(String.class, JavaPlugin.class)
-                            .newInstance(cmd.name(), plugin);
-                } catch (Exception e) {
-                    Bukkit.getLogger().warning("[CommandManager] Failed to create command " + cmd.name());
-                    e.printStackTrace();
-                    continue;
+            try {
+                PluginCommand pluginCommand = PluginCommand.class
+                        .getDeclaredConstructor(String.class, JavaPlugin.class)
+                        .newInstance(cmd.name(), plugin);
+
+                pluginCommand.setExecutor(this::executeCommand);
+                pluginCommand.setDescription(cmd.description());
+                pluginCommand.setUsage(cmd.usage());
+                pluginCommand.setAliases(aliasList);
+
+                if (!cmd.permission().isEmpty()) {
+                    pluginCommand.setPermission(cmd.permission());
+                    pluginCommand.setPermissionMessage(cmd.permissionMessage().isEmpty()
+                            ? "You do not have permission to use this command."
+                            : cmd.permissionMessage());
                 }
-            }
 
-            pluginCommand.setExecutor(this::executeCommand);
-            pluginCommand.setAliases(aliasList);
-            pluginCommand.setDescription(cmd.description());
-            pluginCommand.setUsage(cmd.usage());
-            if (!cmd.permission().isEmpty()) {
-                pluginCommand.setPermission(cmd.permission());
-                pluginCommand.setPermissionMessage(cmd.permissionMessage());
-            }
+                pluginCommand.setTabCompleter((sender, command, label, args) -> {
+                    if (method.isAnnotationPresent(TabComplete.class)) {
+                        try {
+                            Object result = method.getAnnotation(TabComplete.class)
+                                    .handler().getDeclaredConstructor().newInstance()
+                                    .complete(sender, args);
+                            if (result instanceof List<?> list) {
+                                return list.stream().map(Object::toString).toList();
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    return Collections.emptyList();
+                });
 
-            pluginCommand.setTabCompleter((sender, command, label, args) -> {
-                if (method.isAnnotationPresent(TabComplete.class)) {
-                    try {
-                        Object result = method.getAnnotation(TabComplete.class)
-                                .handler().getDeclaredConstructor().newInstance()
-                                .complete(sender, args);
-                        if (result instanceof List<?> list) {
-                            return list.stream().map(Object::toString).toList();
-                        }
-                    } catch (Exception ignored) {}
+                if (commandMap != null) {
+                    commandMap.register(plugin.getName(), pluginCommand);
                 }
-                return Collections.emptyList();
-            });
 
-            if (commandMap != null) {
-                commandMap.register(plugin.getName(), pluginCommand);
+            } catch (Exception e) {
+                Bukkit.getLogger().warning("[CommandManager] Failed to register command: " + cmd.name());
+                e.printStackTrace();
             }
         }
     }

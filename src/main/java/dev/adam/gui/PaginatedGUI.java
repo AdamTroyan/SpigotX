@@ -45,8 +45,8 @@ public class PaginatedGUI {
     public void setNextItem(ItemStack item) { this.nextItem = item; }
     public void setOnPageChange(Consumer<Integer> onPageChange) { this.onPageChange = onPageChange; }
 
-    public void openPage(Player player, int page) {
-        if (player == null) return;
+    public GUI openPage(Player player, int page) {
+        if (player == null) return null;
 
         int pages = Math.max(1, (int) Math.ceil(content.size() / (double) pageSize));
         int p = Math.max(0, Math.min(page, pages - 1));
@@ -70,6 +70,7 @@ public class PaginatedGUI {
         if (onPageChange != null) onPageChange.accept(p);
 
         gui.open(player);
+        return gui;
     }
 
     public void openFirst(Player player) { openPage(player, 0); }
