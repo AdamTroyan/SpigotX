@@ -14,7 +14,7 @@ SpigotX is a powerful and flexible library for creating **Minecraft Spigot/Bukki
 * [5. Usage](#5-usage)
 * [6. Advantages](#6-advantages)
 * [7. Examples](#7-examples)
-* [8. Adding via Maven / Gradle (JitPack)](#Adding-via-Maven-/-Gradle-(JitPack))
+* [8. Adding via Maven / Gradle (JitPack)](#8-Adding-via-Maven-/-Gradle-(JitPack))
 * [9. License](#9-license)
 
 ---
