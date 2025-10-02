@@ -1,12 +1,11 @@
 package dev.adam.commands;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandMap;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -41,60 +40,58 @@ public class CommandManager {
         for (Method method : executor.getClass().getMethods()) {
             if (!method.isAnnotationPresent(Command.class)) continue;
 
-            Command cmd = method.getAnnotation(Command.class);
-            String mainName = cmd.name().toLowerCase();
-
-            commands.put(mainName, method);
+            Command cmdAnnotation = method.getAnnotation(Command.class);
+            String mainName = cmdAnnotation.name().toLowerCase();
 
             List<String> aliasList = new ArrayList<>();
-            if (!cmd.aliases().isEmpty()) {
-                for (String alias : cmd.aliases().split("\\|")) {
+            if (!cmdAnnotation.aliases().isEmpty()) {
+                for (String alias : cmdAnnotation.aliases().split("\\|")) {
                     alias = alias.trim().toLowerCase();
-                    if (!alias.isEmpty()) {
-                        commands.put(alias, method);
-                        aliasList.add(alias);
-                    }
+                    if (!alias.isEmpty()) aliasList.add(alias);
                 }
             }
 
+            commands.put(mainName, method);
+            for (String alias : aliasList) commands.put(alias, method);
+
+            PluginCommand pluginCommand;
             try {
-                PluginCommand pluginCommand = PluginCommand.class
-                        .getDeclaredConstructor(String.class, JavaPlugin.class)
-                        .newInstance(cmd.name(), plugin);
-
-                pluginCommand.setExecutor(this::executeCommand);
-                pluginCommand.setDescription(cmd.description());
-                pluginCommand.setUsage(cmd.usage());
-                pluginCommand.setAliases(aliasList);
-
-                if (!cmd.permission().isEmpty()) {
-                    pluginCommand.setPermission(cmd.permission());
-                    pluginCommand.setPermissionMessage(cmd.permissionMessage().isEmpty()
-                            ? "You do not have permission to use this command."
-                            : cmd.permissionMessage());
-                }
-
-                pluginCommand.setTabCompleter((sender, command, label, args) -> {
-                    if (method.isAnnotationPresent(TabComplete.class)) {
-                        try {
-                            Object result = method.getAnnotation(TabComplete.class)
-                                    .handler().getDeclaredConstructor().newInstance()
-                                    .complete(sender, args);
-                            if (result instanceof List<?> list) {
-                                return list.stream().map(Object::toString).toList();
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                    return Collections.emptyList();
-                });
-
-                if (commandMap != null) {
-                    commandMap.register(plugin.getName(), pluginCommand);
-                }
-
+                Constructor<PluginCommand> constructor =
+                        PluginCommand.class.getDeclaredConstructor(String.class, JavaPlugin.class);
+                constructor.setAccessible(true);
+                pluginCommand = constructor.newInstance(cmdAnnotation.name(), plugin);
             } catch (Exception e) {
-                Bukkit.getLogger().warning("[CommandManager] Failed to register command: " + cmd.name());
+                Bukkit.getLogger().warning("[CommandManager] Failed to create command " + cmdAnnotation.name());
                 e.printStackTrace();
+                continue;
+            }
+
+            pluginCommand.setExecutor(this::executeCommand);
+            pluginCommand.setAliases(aliasList);
+            pluginCommand.setDescription(cmdAnnotation.description());
+            pluginCommand.setUsage(cmdAnnotation.usage());
+
+            if (!cmdAnnotation.permission().isEmpty()) {
+                pluginCommand.setPermission(cmdAnnotation.permission());
+                pluginCommand.setPermissionMessage(cmdAnnotation.permissionMessage());
+            }
+
+            pluginCommand.setTabCompleter((sender, command, label, args) -> {
+                if (method.isAnnotationPresent(TabComplete.class)) {
+                    try {
+                        Object handler = method.getAnnotation(TabComplete.class)
+                                .handler().getDeclaredConstructor().newInstance();
+                        Object result = handler.getClass()
+                                .getMethod("complete", CommandSender.class, String[].class)
+                                .invoke(handler, sender, args);
+                        if (result instanceof List<?> list) return list.stream().map(Object::toString).toList();
+                    } catch (Exception ignored) {}
+                }
+                return Collections.emptyList();
+            });
+
+            if (commandMap != null) {
+                commandMap.register(plugin.getName(), pluginCommand);
             }
         }
     }
@@ -106,10 +103,9 @@ public class CommandManager {
         Command cmd = method.getAnnotation(Command.class);
 
         if (!cmd.permission().isEmpty() && !sender.hasPermission(cmd.permission())) {
-            String msg = cmd.permissionMessage().isEmpty()
+            sender.sendMessage(cmd.permissionMessage().isEmpty()
                     ? "You do not have permission to use this command."
-                    : cmd.permissionMessage();
-            sender.sendMessage(msg);
+                    : cmd.permissionMessage());
             return true;
         }
 
@@ -134,11 +130,8 @@ public class CommandManager {
             }
         };
 
-        if (async) {
-            CompletableFuture.runAsync(task);
-        } else {
-            task.run();
-        }
+        if (async) CompletableFuture.runAsync(task);
+        else task.run();
 
         return true;
     }
