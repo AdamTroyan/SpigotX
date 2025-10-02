@@ -47,18 +47,21 @@ public class Events {
     // ---------------- Unregister methods ----------------
 
     public static void unregisterAll() {
-        listeners.forEach(RegisteredListener::unregister);
+        for (RegisteredListener<?> rl : listeners) {
+            rl.unregister();
+        }
         listeners.clear();
     }
 
     public static <T extends Event> void unregister(EventListener<T> listener) {
-        listeners.removeIf(rl -> {
-            if (rl.listener.equals(listener)) {
+        Iterator<RegisteredListener<?>> it = listeners.iterator();
+        while (it.hasNext()) {
+            RegisteredListener<?> rl = it.next();
+            if (rl.listenerEquals(listener)) {
                 rl.unregister();
-                return true;
+                it.remove();
             }
-            return false;
-        });
+        }
     }
 
     // ---------------- Functional interface ----------------
@@ -66,6 +69,7 @@ public class Events {
     @FunctionalInterface
     public interface EventListener<T extends Event> {
         void handle(T event);
+
     }
 
     // ---------------- Internal RegisteredListener wrapper ----------------
@@ -113,8 +117,20 @@ public class Events {
             }
         }
 
+
         public void unregister() {
-            HandlerList.unregisterAll(this);
+            try {
+                HandlerList handlerList = (HandlerList) clazz.getMethod("getHandlerList").invoke(null);
+                if (handlerList != null) {
+                    handlerList.unregister(this);
+                }
+            } catch (Exception ignored) {
+
+            }
+        }
+
+        public boolean listenerEquals(EventListener<?> other) {
+            return listener.equals(other);
         }
     }
 
