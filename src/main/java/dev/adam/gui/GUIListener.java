@@ -10,11 +10,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.Plugin;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class GUIListener implements Listener {
-    private static final Map<Player, GUI> openGuis = new ConcurrentHashMap<>();
     private static boolean registered = false;
 
     public static void ensureRegistered() {
@@ -34,11 +30,9 @@ public class GUIListener implements Listener {
         if (!isOurGui(event.getInventory())) return;
         event.setCancelled(true);
 
-        if (event.getRawSlot() >= 0 && event.getRawSlot() < event.getInventory().getSize()) {
-            GUIBase gui = (GUIBase) event.getInventory().getHolder();
-            if (gui != null && gui.hasHandler(event.getSlot())) {
-                gui.handleClick(event);
-            }
+        GUIBase gui = (GUIBase) event.getInventory().getHolder();
+        if (gui.hasHandler(event.getSlot())) {
+            gui.handleClick(event);
         }
     }
 
@@ -49,28 +43,10 @@ public class GUIListener implements Listener {
         }
     }
 
-    // אופציונלי: תמיכה ב־open/close GUI עם לוגיקה משלך
-    public static void openGui(Player player, GUI gui) {
-        openGuis.put(player, gui);
-        gui.open(player);
-    }
-
-    public static void closeGui(Player player) {
-        openGuis.remove(player);
-    }
-
-    public static GUI getOpenGui(Player player) {
-        return openGuis.get(player);
-    }
-
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        GUI gui = openGuis.get(player);
-        if (gui != null && event.getInventory().equals(gui.getInventory())) {
-            gui.handleClose(event);
-            openGuis.remove(player);
-            GUIUpdater.cancel(gui);
-        }
+        if (!isOurGui(event.getInventory())) return;
+        GUIBase gui = (GUIBase) event.getInventory().getHolder();
+        gui.handleClose(event);
     }
 }
