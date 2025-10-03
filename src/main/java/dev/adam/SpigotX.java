@@ -17,7 +17,7 @@ public class SpigotX {
         return plugin;
     }
 
-    public static void register(Object commandsInstance) {
+    public static void registerCommand(Object commandsInstance) {
         if (plugin == null)
             throw new IllegalStateException("SpigotX.init(plugin) must be called before register!");
         new CommandManager(plugin, commandsInstance);
