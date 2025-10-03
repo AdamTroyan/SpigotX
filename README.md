@@ -81,9 +81,6 @@ public class MyPlugin extends JavaPlugin {
 
         // 2. Register annotated commands
         SpigotX.registerCommands(new MyCommands());
-
-        // 3. Register events (optional)
-        SpigotX.registerCommands(new AdminCommands());
     }
 }
 ```
