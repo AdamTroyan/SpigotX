@@ -59,6 +59,7 @@ public class CommandManager {
                                 Object inst = subCommandInstanceMap.get(tryCmd);
                                 String[] remainingArgs = parts.subList(i, parts.size()).toArray(new String[0]);
                                 boolean async = m.isAnnotationPresent(AsyncCommand.class);
+
                                 Runnable run = () -> {
                                     try {
                                         if (m.getParameterCount() == 2) {
@@ -184,6 +185,7 @@ public class CommandManager {
                                 e.printStackTrace();
                             }
                         };
+                        
                         if (async) {
                             Bukkit.getScheduler().runTaskAsynchronously(plugin, run);
                         } else {

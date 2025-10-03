@@ -19,6 +19,7 @@ public class EventUtil {
                         handler.accept(eventClass.cast(event));
                     }
                 },
+                
                 plugin
         );
     }

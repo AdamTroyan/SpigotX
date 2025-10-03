@@ -2,18 +2,16 @@ package dev.adam.gui;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Inventory;
 import dev.adam.gui.context.GUIClickContext;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class GUIBuilder implements GUIBase{
-    private final Inventory inventory;
-    private final Map<Integer, Consumer<GUIClickContext>> handlers = new HashMap<>();
+public class GUIBuilder implements GUIBase {
+    private final GUI gui;
     private final Map<Integer, String> slotPermissions = new HashMap<>();
 
     static {
@@ -21,7 +19,7 @@ public class GUIBuilder implements GUIBase{
     }
 
     public GUIBuilder(String title, int rows) {
-        this.inventory = Bukkit.createInventory(this, rows * 9, title);
+        this.gui = new GUI(title, rows);
     }
 
     public GUIBuilder setItem(int slot, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -29,41 +27,43 @@ public class GUIBuilder implements GUIBase{
     }
 
     public GUIBuilder setItem(int slot, ItemStack item, String permission, Consumer<GUIClickContext> handler) {
-        inventory.setItem(slot, item);
-        if (handler != null) handlers.put(slot, handler);
+        gui.setItem(slot, item, handler);
         if (permission != null && !permission.isEmpty()) slotPermissions.put(slot, permission);
         return this;
     }
 
     public void open(Player player) {
-        player.openInventory(inventory);
+        gui.open(player);
     }
 
-    public GUIBuilder build() {
-        return this;
+    public GUI build() {
+        return gui;
     }
 
     @Override
     public Inventory getInventory() {
-        return inventory;
+        return gui.getInventory();
     }
 
     @Override
     public boolean hasHandler(int slot) {
-        return handlers.containsKey(slot);
+        return gui.hasHandler(slot);
     }
 
     @Override
-    public void handleClick(InventoryClickEvent event) {
+    public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
         int slot = event.getSlot();
         Player player = (Player) event.getWhoClicked();
+        
         if (slotPermissions.containsKey(slot) && !player.hasPermission(slotPermissions.get(slot))) {
-            player.sendMessage("§cאין לך הרשאה ללחוץ על כפתור זה.");
             return;
         }
-        Consumer<GUIClickContext> handler = handlers.get(slot);
-        if (handler != null) {
-            handler.accept(new GUIClickContext(event));
-        }
+
+        gui.handleClick(event);
+    }
+
+    @Override
+    public void handleClose(org.bukkit.event.inventory.InventoryCloseEvent event) {
+        gui.handleClose(event);
     }
 }
