@@ -27,17 +27,21 @@ public class CommandManager {
     public static void register(String name, String desc, String perm, BiConsumer<CommandSender, String[]> exec) {
         JavaPlugin plugin = (JavaPlugin) SpigotX.getPlugin();
         PluginCommand cmd = plugin.getCommand(name);
+
         if (cmd == null) {
             plugin.getLogger().warning("[SpigotX] Command /" + name + " not found in plugin.yml!");
             return;
         }
+
         cmd.setDescription(desc);
+
         if (!perm.isEmpty()) cmd.setPermission(perm);
+        
         cmd.setExecutor((sender, command, label, args) -> {
             try {
                 exec.accept(sender, args);
             } catch (Exception e) {
-                sender.sendMessage("§cAn error occurred.");
+                sender.sendMessage("An error occurred.");
                 e.printStackTrace();
             }
             return true;
@@ -64,20 +68,20 @@ public class CommandManager {
                             Class<?> paramType = method.getParameterTypes()[0];
                             if (paramType == Player.class) {
                                 if (!(sender instanceof Player)) {
-                                    sender.sendMessage("§cOnly players can use this command.");
+                                    sender.sendMessage("Only players can use this command.");
                                     return;
                                 }
                                 method.invoke(instance, sender, args);
                             } else if (paramType == CommandSender.class) {
                                 method.invoke(instance, sender, args);
                             } else {
-                                sender.sendMessage("§cInvalid command method signature.");
+                                sender.sendMessage("Invalid command method signature.");
                             }
                         } else {
-                            sender.sendMessage("§cInvalid command method signature.");
+                            sender.sendMessage("Invalid command method signature.");
                         }
                     } catch (Exception e) {
-                        sender.sendMessage("§cCommand error: " + e.getMessage());
+                        sender.sendMessage("Command error: " + e.getMessage());
                         e.printStackTrace();
                     }
                 };

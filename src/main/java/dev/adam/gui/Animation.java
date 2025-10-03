@@ -16,6 +16,7 @@ public class Animation {
     public ItemStack nextFrame() {
         ItemStack frame = frames.get(currentFrame);
         currentFrame = (currentFrame + 1) % frames.size();
+        
         return frame;
     }
 

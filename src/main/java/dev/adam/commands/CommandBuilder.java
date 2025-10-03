@@ -11,20 +11,28 @@ public class CommandBuilder {
 
     public CommandBuilder name(String name) {
         this.name = name;
+
         return this;
     }
+
     public CommandBuilder description(String desc) {
         this.description = desc;
+
         return this;
     }
+
     public CommandBuilder permission(String perm) {
         this.permission = perm;
+
         return this;
     }
+
     public CommandBuilder executor(BiConsumer<CommandSender, String[]> exec) {
         this.executor = exec;
+        
         return this;
     }
+
     public void register() {
         CommandManager.register(name, description, permission, executor);
     }

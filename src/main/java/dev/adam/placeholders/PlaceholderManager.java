@@ -16,6 +16,7 @@ public class PlaceholderManager {
         for (var entry : placeholders.entrySet()) {
             text = text.replace("{" + entry.getKey() + "}", entry.getValue().apply(player));
         }
+        
         return text;
     }
 }

@@ -10,6 +10,7 @@ public class TabCompleterBuilder {
 
     public TabCompleterBuilder completer(BiFunction<CommandSender, String[], List<String>> func) {
         this.completer = func;
+        
         return this;
     }
 

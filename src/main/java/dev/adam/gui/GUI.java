@@ -28,11 +28,13 @@ public class GUI {
 
     public void setItem(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
         inventory.setItem(slot, item);
+        
         if (onClick != null) clickHandlers.put(slot, onClick);
     }
 
     public void fillBorder(ItemStack item, Consumer<GUIClickContext> onClick) {
         int size = rows * 9;
+
         for (int i = 0; i < size; i++) {
             if (i < 9 || i >= size - 9 || i % 9 == 0 || i % 9 == 8) {
                 setItem(i, item, onClick);
@@ -45,11 +47,13 @@ public class GUI {
 
     public void open(Player player) {
         player.openInventory(inventory);
+
         if (onOpen != null) onOpen.accept(player);
     }
 
     public void close(Player player) {
         player.closeInventory();
+
         if (onClose != null) onClose.accept(player);
     }
 
@@ -58,8 +62,10 @@ public class GUI {
     public void handleClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         int slot = event.getRawSlot();
+
         if (clickHandlers.containsKey(slot)) {
             event.setCancelled(true);
+
             clickHandlers.get(slot).accept(new GUIClickContext(event));
         }
     }

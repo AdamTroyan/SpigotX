@@ -6,6 +6,7 @@ public class ReflectionUtils {
     public static Object callMethod(Object obj, String method) {
         try {
             Method m = obj.getClass().getMethod(method);
+            
             return m.invoke(obj);
         } catch (Exception e) {
             return null;
