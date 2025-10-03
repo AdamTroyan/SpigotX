@@ -5,6 +5,68 @@
 
 ---
 
+## 📦 Installation & Dependency Management
+
+SpigotX is distributed via [JitPack](https://jitpack.io/).  
+**You must add JitPack as a repository** in your build system.
+
+### Maven
+
+Add JitPack to your `<repositories>` section:
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+Add SpigotX to your `<dependencies>`:
+```xml
+<dependency>
+    <groupId>com.github.AdamTroyan</groupId>
+    <artifactId>SpigotX</artifactId>
+    <version>v1.0.9</version>
+</dependency>
+```
+
+### Gradle (Groovy DSL)
+
+Add JitPack to your repositories:
+```groovy
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+Add SpigotX to your dependencies:
+```groovy
+dependencies {
+    implementation 'com.github.AdamTroyan:SpigotX:v1.0.9'
+}
+```
+
+### Gradle (Kotlin DSL)
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+}
+dependencies {
+    implementation("com.github.AdamTroyan:SpigotX:v1.0.9")
+}
+```
+
+> **Tip:** Always use the latest [release from JitPack](https://jitpack.io/#AdamTroyan/SpigotX) for bugfixes and new features.
+
+---
+
 ## Advanced Table of Contents
 
 - [Deep Dive: Initialization & Lifecycle](#deep-dive-initialization--lifecycle)
@@ -56,6 +118,9 @@ SpigotX.registerCommands(new AdminCommands());
 SpigotX.registerCommands(new PlayerCommands());
 ```
 
+#### Pro Tip:  
+Organize your commands by feature or permission group for maintainability.
+
 ### Subcommands & Argument Parsing
 
 SpigotX supports subcommands and argument parsing by inspecting the method signature:
@@ -78,6 +143,20 @@ public void user(CommandSender sender, String[] args) {
 }
 ```
 
+#### Advanced Example: Nested Subcommands
+```java
+@Command(name = "team", description = "Team management")
+public void team(CommandSender sender, String[] args) {
+    if (args.length < 2) {
+        sender.sendMessage("/team <invite|remove> <player>");
+        return;
+    }
+    String action = args[0];
+    String target = args[1];
+    // handle logic...
+}
+```
+
 ### Asynchronous Commands
 
 For heavy operations (database, HTTP, etc.), use `@AsyncCommand`:
@@ -94,6 +173,9 @@ public void lookup(CommandSender sender, String[] args) {
     );
 }
 ```
+
+#### Tip:  
+Always switch back to the main thread for Bukkit API calls!
 
 ### Custom Tab Completion with Context
 
@@ -120,6 +202,12 @@ public static class DynamicTab implements TabHandler {
 - `permission` in `@Command` restricts usage.
 - `usage` provides a usage message if arguments are missing or invalid.
 
+#### Example:
+```java
+@Command(name = "admin", permission = "myplugin.admin", usage = "/admin <reload|status>")
+public void admin(CommandSender sender, String[] args) { ... }
+```
+
 ---
 
 ## Events: Filters, Priorities, and Unregistration
@@ -143,14 +231,12 @@ Events.register(PlayerInteractEvent.class,
 );
 ```
 
-### Unregistering Listeners
-
-To avoid memory leaks, unregister listeners when not needed:
-
+#### Advanced: Unregistering Listeners Dynamically
 ```java
 var reg = Events.register(...);
-Events.unregister(reg); // Unregister a specific listener
-Events.unregisterAll(); // Unregister all listeners registered by your plugin
+if (shouldUnregister()) {
+    Events.unregister(reg);
+}
 ```
 
 ### Lambda Listeners for Common Events
@@ -178,6 +264,9 @@ Events.onBlockBreak(ctx -> {
     }
 });
 ```
+
+#### Tip:  
+You can use `EventContext` to access any event property, not just player events.
 
 ---
 
@@ -234,6 +323,14 @@ gui.setItem(0, getPersonalizedItem(player), ctx -> {});
 gui.setTitle("Welcome, {player}");
 ```
 
+#### Advanced: Reactive GUIs
+You can listen to external events and update the GUI for all viewers:
+```java
+Events.onSomeEvent(e -> {
+    gui.updateAllViewers();
+});
+```
+
 ---
 
 ## Paginated GUI: Customization & Navigation
@@ -258,6 +355,9 @@ pgui.setOnPageChange(page -> {
 ```java
 pgui.setContent(fetchItemsForPlayer(player));
 ```
+
+#### Tip:  
+Paginated GUIs are ideal for shops, leaderboards, and large inventories.
 
 ---
 
@@ -285,6 +385,9 @@ gui.setItem(0, new ItemStack(Material.EMERALD), ctx -> {
 PlaceholderManager.get().unregister("rank");
 ```
 
+#### Advanced: Global vs. Per-Player Placeholders
+You can register placeholders that are global or specific to a player context.
+
 ---
 
 ## Animation Utilities: Custom Animations & Scheduling
@@ -304,6 +407,9 @@ GUIUpdater.scheduleRepeating(this, gui, 20L, g -> {
 GUIUpdater.cancel(gui);
 ```
 
+#### Tip:  
+Use scheduled updates for progress bars, timers, or animated effects.
+
 ---
 
 ## Error Handling & Debugging
@@ -311,6 +417,7 @@ GUIUpdater.cancel(gui);
 - All core methods throw clear exceptions if misused (e.g., not initialized).
 - Use try/catch for async commands to handle exceptions gracefully.
 - Use logging (`Bukkit.getLogger()`) for debugging event flows.
+- For debugging GUIs, use `gui.debug()` to print the current state.
 
 ---
 
@@ -320,6 +427,8 @@ GUIUpdater.cancel(gui);
 - Use async commands for heavy operations.
 - Use placeholders for all dynamic text.
 - Modularize commands and GUIs for maintainability.
+- Prefer dependency injection for services used in commands/events.
+- Document your commands and GUIs for future maintainers.
 
 ---
 
@@ -334,6 +443,12 @@ GUIUpdater.cancel(gui);
 **Q:** How do I prevent memory leaks with GUIs?  
 **A:** Use `setAutoUnregisterWhenEmpty(true)` (default) and always close GUIs when done.
 
+**Q:** Can I use SpigotX with Paper or Purpur?  
+**A:** Yes! SpigotX is compatible with all Spigot forks.
+
+**Q:** How do I contribute or report bugs?  
+**A:** Open an issue or pull request on the [GitHub repository](https://github.com/AdamTroyan/SpigotX).
+
 ---
 
 ## License
@@ -346,3 +461,4 @@ See the main repository for license details.
 
 - [SpigotX Javadoc](https://adamtroyan.github.io/SpigotX-Javadoc/)
 - [Spigot Plugin Development Guide](https://www.spigotmc.org/wiki/spigot-plugin-development/)
+- [JitPack Documentation](https://jitpack.io/docs/)
