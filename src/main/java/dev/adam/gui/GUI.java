@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class GUI {
+public class GUI implements GUIBase {
     private final String title;
     private final int rows;
     private final Inventory inventory;
@@ -74,5 +74,17 @@ public class GUI {
         if (onClose != null && event.getInventory().equals(inventory)) {
             onClose.accept((Player) event.getPlayer());
         }
+    }
+
+        public boolean hasHandler(int slot) {
+        return clickHandlers.containsKey(slot);
+    }
+
+    public Consumer<GUIClickContext> getHandler(int slot) {
+        return clickHandlers.get(slot);
+    }
+
+    public void addHandler(int slot, Consumer<GUIClickContext> handler) {
+        if (handler != null) clickHandlers.put(slot, handler);
     }
 }

@@ -9,4 +9,6 @@ public interface GUIBase extends InventoryHolder {
     default void handleClick(InventoryClickEvent event) {}
     @Override
     Inventory getInventory();
+    
+    default void handleClose(org.bukkit.event.inventory.InventoryCloseEvent event) {}
 }
