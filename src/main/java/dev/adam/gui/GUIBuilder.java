@@ -2,9 +2,7 @@ package dev.adam.gui;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
 import dev.adam.gui.context.GUIClickContext;
-
 import java.util.function.Consumer;
 
 public class GUIBuilder {
@@ -36,5 +34,9 @@ public class GUIBuilder {
 
     public GUI build() {
         return gui;
+    }
+
+    public void open(Player player) {
+        GUIListener.openGui(player, gui);
     }
 }
