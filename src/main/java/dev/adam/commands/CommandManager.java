@@ -11,17 +11,93 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 public class CommandManager {
     private final Plugin plugin;
 
+    private final Map<String, Method> subCommandMap = new HashMap<>();
+    private final Map<String, Object> subCommandInstanceMap = new HashMap<>();
+    private final Set<String> registeredRoots = new HashSet<>();
+
     public CommandManager(Plugin plugin, Object commandClassInstance) {
         this.plugin = plugin;
         Arrays.stream(commandClassInstance.getClass().getDeclaredMethods())
             .filter(m -> m.isAnnotationPresent(Command.class))
-            .forEach(method -> registerAnnotatedCommand(commandClassInstance, method));
+            .forEach(method -> {
+                registerAnnotatedCommand(commandClassInstance, method);
+
+                Command cmd = method.getAnnotation(Command.class);
+                String name = cmd.name().toLowerCase().trim();
+                
+                subCommandMap.put(name, method);
+                subCommandInstanceMap.put(name, commandClassInstance);
+
+                String root = name.split(" ")[0];
+
+                if (registeredRoots.add(root)) {
+                    PluginCommand pluginCommand = ((JavaPlugin) plugin).getCommand(root);
+                    if (pluginCommand != null) {
+                        pluginCommand.setExecutor((sender, command, label, args) -> {
+                            List<String> parts = new ArrayList<>();
+                            parts.add(label.toLowerCase());
+
+                            for (String arg : args) parts.add(arg.toLowerCase());
+
+                            for (int i = parts.size(); i > 0; i--) {
+                                String tryCmd = String.join(" ", parts.subList(0, i));
+
+                                if (subCommandMap.containsKey(tryCmd)) {   
+                                    Method m = subCommandMap.get(tryCmd);
+
+                                    Object inst = subCommandInstanceMap.get(tryCmd);
+                                    String[] remainingArgs = parts.subList(i, parts.size()).toArray(new String[0]);
+                                    boolean async = m.isAnnotationPresent(AsyncCommand.class);
+
+                                    Runnable run = () -> {
+                                        try {
+                                            if (m.getParameterCount() == 2) {
+                                                Class<?> paramType = m.getParameterTypes()[0];
+                                                if (paramType == Player.class) {
+                                                    if (!(sender instanceof Player)) {
+                                                        sender.sendMessage("Only players can use this command.");
+                                                        return;
+                                                    }
+
+                                                    m.invoke(inst, sender, remainingArgs);
+                                                } else if (paramType == CommandSender.class) {
+                                                    m.invoke(inst, sender, remainingArgs);
+                                                } else {
+                                                    sender.sendMessage("Invalid command method signature.");
+                                                }
+                                            } else {
+                                                sender.sendMessage("Invalid command method signature.");
+                                            }
+                                        } catch (Exception e) {
+                                            sender.sendMessage("Command error: " + e.getMessage());
+                                            
+                                            e.printStackTrace();
+                                        }
+                                    };
+
+                                    if (async) {
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, run);
+                                    } else {
+                                        run.run();
+                                    }
+
+                                    return true;
+                                }
+                            }
+
+                            sender.sendMessage("Unknown command.");
+
+                            return true;
+                        });
+                    }
+                }
+            });
     }
 
     public static void register(String name, String desc, String perm, BiConsumer<CommandSender, String[]> exec) {
@@ -36,7 +112,7 @@ public class CommandManager {
         cmd.setDescription(desc);
 
         if (!perm.isEmpty()) cmd.setPermission(perm);
-        
+
         cmd.setExecutor((sender, command, label, args) -> {
             try {
                 exec.accept(sender, args);
