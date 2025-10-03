@@ -6,7 +6,7 @@
 ---
 
 > **Why SpigotX?**  
-> SpigotX is not just a utility library – it’s a modern, modular, and developer-friendly framework that empowers you to build robust, maintainable, and beautiful Minecraft plugins with minimal boilerplate and maximum power.  
+> SpigotX is a modern, modular, and developer-friendly framework that empowers you to build robust, maintainable, and beautiful Minecraft plugins with minimal boilerplate and maximum power.  
 > Whether you’re a beginner or a seasoned developer, SpigotX will make you fall in love with plugin development.
 
 ---
@@ -38,12 +38,9 @@ SpigotX is distributed via [JitPack](https://jitpack.io/).
 ### Gradle (Groovy DSL)
 
 ```groovy
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url 'https://jitpack.io' }
-    }
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 dependencies {
     implementation 'com.github.AdamTroyan:SpigotX:v1.0.9'
@@ -52,12 +49,9 @@ dependencies {
 
 ### Gradle (Kotlin DSL)
 ```kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven("https://jitpack.io")
-    }
+repositories {
+    mavenCentral()
+    maven("https://jitpack.io")
 }
 dependencies {
     implementation("com.github.AdamTroyan:SpigotX:v1.0.9")
@@ -74,7 +68,6 @@ dependencies {
 ### 1. Main Plugin Class
 
 ```java
-// filepath: src/main/java/com/example/MyPlugin.java
 package com.example;
 
 import dev.adam.SpigotX;
@@ -86,7 +79,7 @@ public class MyPlugin extends JavaPlugin {
         // 1. Initialize SpigotX
         SpigotX.init(this);
 
-        // 2. Register commands
+        // 2. Register annotated commands
         SpigotX.registerCommands(new MyCommands());
 
         // 3. Register events (optional)
@@ -95,14 +88,23 @@ public class MyPlugin extends JavaPlugin {
 }
 ```
 
-### 2. A Command Anyone Can Understand
+---
+
+## 🏷️ Annotation-Based Commands
+
+SpigotX supports annotation-based commands for maximum simplicity and power.  
+Just annotate your methods and register the class instance:
 
 ```java
-// filepath: src/main/java/com/example/MyCommands.java
 package com.example;
 
 import dev.adam.commands.Command;
+import dev.adam.commands.AsyncCommand;
+import dev.adam.commands.TabComplete;
+import dev.adam.commands.TabHandler;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import java.util.List;
 
 public class MyCommands {
     // Registers /hello
@@ -110,40 +112,17 @@ public class MyCommands {
     public void hello(CommandSender sender, String[] args) {
         sender.sendMessage("👋 Hello, " + sender.getName() + "! Welcome to the server.");
     }
-}
-```
 
----
-
-## 🧑‍💻 Advanced Command: Arguments, Permissions, Tab Completion
-
-```java
-// filepath: src/main/java/com/example/AdminCommands.java
-package com.example;
-
-import dev.adam.commands.Command;
-import dev.adam.commands.TabComplete;
-import dev.adam.commands.TabHandler;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import java.util.List;
-
-public class AdminCommands {
-    // /admin <reload|status>
-    @Command(name = "admin", permission = "myplugin.admin", usage = "/admin <reload|status>")
-    public void admin(CommandSender sender, String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage("Usage: /admin <reload|status>");
-            return;
-        }
-        switch (args[0].toLowerCase()) {
-            case "reload" -> sender.sendMessage("🔄 Plugin reloaded!");
-            case "status" -> sender.sendMessage("✅ Plugin is running.");
-            default -> sender.sendMessage("❌ Unknown subcommand.");
-        }
+    // Registers /lookup as async
+    @AsyncCommand
+    @Command(name = "lookup", description = "Lookup player stats")
+    public void lookup(CommandSender sender, String[] args) {
+        // Heavy operation in background
+        String player = args.length > 0 ? args[0] : "unknown";
+        // ... do async work, then send result to sender
     }
 
-    // /warp <warpname> with tab completion
+    // Registers /warp with tab completion
     @TabComplete(handler = WarpTab.class)
     @Command(name = "warp", description = "Warp to a location")
     public void warp(Player player, String[] args) {
@@ -152,14 +131,12 @@ public class AdminCommands {
             return;
         }
         String warpName = args[0];
-        // Here you would teleport the player to the warp
         player.sendMessage("🚀 Warping to " + warpName + "...");
     }
 
     public static class WarpTab implements TabHandler {
         @Override
         public List<String> complete(CommandSender sender, String[] args) {
-            // Suggest warp names
             return List.of("spawn", "shop", "arena");
         }
     }
@@ -168,33 +145,38 @@ public class AdminCommands {
 
 ---
 
-## ⚡ Async Commands: No More Lag
+## 🧑‍💻 Classic CommandBuilder (Optional)
+
+You can also use the builder API for full control:
 
 ```java
-// filepath: src/main/java/com/example/LookupCommands.java
 package com.example;
 
-import dev.adam.commands.AsyncCommand;
-import dev.adam.commands.Command;
+import dev.adam.commands.CommandBuilder;
 import org.bukkit.command.CommandSender;
-import org.bukkit.Bukkit;
 
-public class LookupCommands {
-    @AsyncCommand
-    @Command(name = "lookup", description = "Lookup player stats")
-    public void lookup(CommandSender sender, String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage("Usage: /lookup <player>");
-            return;
-        }
-        String player = args[0];
-        // Simulate heavy operation (e.g., database)
-        String stats = "Kills: 10, Deaths: 2"; // Replace with real lookup
-        // Always switch back to main thread for Bukkit API!
-        Bukkit.getScheduler().runTask(SpigotX.getPlugin(), () ->
-            sender.sendMessage("📊 Stats for " + player + ": " + stats)
-        );
+public class MyCommands {
+    public void register() {
+        new CommandBuilder()
+            .name("hello")
+            .description("Say hello to the player")
+            .executor((sender, args) -> sender.sendMessage("👋 Hello, " + sender.getName() + "! Welcome to the server."))
+            .register();
     }
+}
+```
+
+---
+
+## ⚡ Async Commands: No More Lag
+
+Just add `@AsyncCommand` to your command method and SpigotX will run it off the main thread.
+
+```java
+@AsyncCommand
+@Command(name = "lookup", description = "Lookup player stats")
+public void lookup(CommandSender sender, String[] args) {
+    // Heavy operation here
 }
 ```
 
@@ -202,48 +184,21 @@ public class LookupCommands {
 
 ## 🎯 Events: React to the World
 
-### Welcome Players on Join
-
 ```java
-// filepath: src/main/java/com/example/JoinListener.java
 package com.example;
 
-import dev.adam.events.Events;
+import dev.adam.events.EventBuilder;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class JoinListener extends JavaPlugin {
     @Override
     public void onEnable() {
-        SpigotX.init(this);
+        dev.adam.SpigotX.init(this);
 
-        Events.register(PlayerJoinEvent.class, ctx -> {
-            ctx.getPlayer().sendMessage("🎉 Welcome to the server, " + ctx.getPlayer().getName() + "!");
-        });
-    }
-}
-```
-
-### Block Breaking Protection
-
-```java
-// filepath: src/main/java/com/example/BlockBreakListener.java
-package com.example;
-
-import dev.adam.events.Events;
-import org.bukkit.plugin.java.JavaPlugin;
-
-public class BlockBreakListener extends JavaPlugin {
-    @Override
-    public void onEnable() {
-        SpigotX.init(this);
-
-        Events.onBlockBreak(ctx -> {
-            if (!ctx.getPlayer().isOp()) {
-                ctx.setCancelled(true);
-                ctx.getPlayer().sendMessage("⛔ You can't break blocks!");
-            }
-        });
+        new EventBuilder<>(PlayerJoinEvent.class)
+            .handle(ctx -> ctx.getPlayer().sendMessage("🎉 Welcome to the server, " + ctx.getPlayer().getName() + "!"))
+            .register();
     }
 }
 ```
@@ -252,57 +207,20 @@ public class BlockBreakListener extends JavaPlugin {
 
 ## 🖼️ GUI: Interactive Menus That Wow
 
-### Simple Clickable GUI
-
 ```java
-// filepath: src/main/java/com/example/GuiExample.java
 package com.example;
 
-import dev.adam.gui.GUI;
+import dev.adam.gui.GUIBuilder;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class GuiExample {
     public void openSimpleGui(Player player) {
-        GUI gui = new GUI(SpigotX.getPlugin(), "💎 My First GUI", 1); // 1 row
-        ItemStack emerald = new ItemStack(Material.EMERALD);
-
-        // Set emerald at slot 4, clicking it sends a message
-        gui.setItem(4, emerald, ctx -> {
-            ctx.getPlayer().sendMessage("💚 You clicked the emerald!");
-        });
-
-        gui.open(player);
-    }
-}
-```
-
-### Animated GUI Item
-
-```java
-// filepath: src/main/java/com/example/AnimatedGuiExample.java
-package com.example;
-
-import dev.adam.gui.GUI;
-import dev.adam.gui.Animation;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import java.util.List;
-
-public class AnimatedGuiExample {
-    public void openAnimatedGui(Player player) {
-        GUI gui = new GUI(SpigotX.getPlugin(), "🌈 Animated GUI", 1);
-        List<ItemStack> frames = List.of(
-            new ItemStack(Material.RED_WOOL),
-            new ItemStack(Material.GREEN_WOOL),
-            new ItemStack(Material.BLUE_WOOL)
-        );
-        Animation anim = new Animation(frames, 10L); // 10 ticks per frame
-        gui.setAnimation(4, anim);
-
-        gui.open(player);
+        new GUIBuilder("💎 My First GUI", 1)
+            .setItem(4, new ItemStack(Material.EMERALD), ctx -> ctx.getPlayer().sendMessage("💚 You clicked the emerald!"))
+            .build()
+            .open(player);
     }
 }
 ```
@@ -312,7 +230,6 @@ public class AnimatedGuiExample {
 ## 📄 Paginated GUI: For Large Lists
 
 ```java
-// filepath: src/main/java/com/example/PaginatedGuiExample.java
 package com.example;
 
 import dev.adam.gui.PaginatedGUI;
@@ -324,17 +241,14 @@ import java.util.List;
 
 public class PaginatedGuiExample {
     public void openPaginatedGui(Player player) {
-        PaginatedGUI pgui = new PaginatedGUI(SpigotX.getPlugin(), "🛒 Shop", 5);
+        PaginatedGUI pgui = new PaginatedGUI("🛒 Shop", 5);
 
-        // Add 50 items
         List<ItemStack> items = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
-            ItemStack item = new ItemStack(Material.DIAMOND);
-            items.add(item);
+            items.add(new ItemStack(Material.DIAMOND));
         }
         pgui.setContent(items);
 
-        // Set navigation buttons
         pgui.setPrevItem(new ItemStack(Material.ARROW));
         pgui.setNextItem(new ItemStack(Material.ARROW));
 
@@ -348,7 +262,6 @@ public class PaginatedGuiExample {
 ## 🏷️ Placeholders: Dynamic Text Everywhere
 
 ```java
-// filepath: src/main/java/com/example/PlaceholderExample.java
 package com.example;
 
 import dev.adam.placeholders.PlaceholderManager;
@@ -356,11 +269,8 @@ import org.bukkit.entity.Player;
 
 public class PlaceholderExample {
     public void setupPlaceholders() {
-        // Register a placeholder {rank}
-        PlaceholderManager.get().register("rank", (Player p) -> "VIP");
-
-        // Register a placeholder {balance}
-        PlaceholderManager.get().register("balance", (Player p) -> "1000");
+        PlaceholderManager.register("rank", (Player p) -> "VIP");
+        PlaceholderManager.register("balance", (Player p) -> "1000");
     }
 }
 ```
@@ -375,7 +285,6 @@ gui.setTitle("Balance: {balance}");
 ## ⏱️ Animation Utilities: Scheduled GUI Updates
 
 ```java
-// filepath: src/main/java/com/example/AnimationUtilExample.java
 package com.example;
 
 import dev.adam.gui.GUIUpdater;
@@ -385,8 +294,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class AnimationUtilExample {
     public void startUpdatingGui(GUI gui) {
-        // Update slot 0 every second with a random item
-        GUIUpdater.scheduleRepeating(SpigotX.getPlugin(), gui, 20L, g -> {
+        GUIUpdater.scheduleRepeating(dev.adam.SpigotX.getPlugin(), gui, 20L, g -> {
             g.setItem(0, new ItemStack(Material.values()[(int) (Math.random() * Material.values().length)]), null);
         });
     }
@@ -422,7 +330,7 @@ public class AnimationUtilExample {
 **A:** Yes! SpigotX is compatible with all Spigot forks.
 
 **Q:** How do I unregister an event or GUI updater?  
-**A:** Use `Events.unregister(registration)` or `GUIUpdater.cancel(gui)`.
+**A:** Use your own unregister logic or `GUIUpdater.cancel(gui)`.
 
 ---
 
@@ -444,5 +352,3 @@ See the main repository for license details.
 > SpigotX is your secret weapon.  
 >  
 > *If you have suggestions or want to contribute, open an issue or PR on GitHub!*
-
----
