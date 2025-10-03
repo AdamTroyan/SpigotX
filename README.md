@@ -1,11 +1,11 @@
-# SpigotX – Advanced & In-Depth Documentation
+# SpigotX – Complete Beginner-to-Advanced Guide
 
 [![](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)  
 [JavaDoc Reference](https://adamtroyan.github.io/SpigotX-Javadoc/)
 
 ---
 
-## 📦 Installation & Dependency Management
+## 📦 How to Add SpigotX to Your Project
 
 SpigotX is distributed via [JitPack](https://jitpack.io/).  
 **You must add JitPack as a repository** in your build system.
@@ -67,398 +67,359 @@ dependencies {
 
 ---
 
-## Advanced Table of Contents
+## 🏁 Getting Started – Your First Plugin with SpigotX
 
-- [Deep Dive: Initialization & Lifecycle](#deep-dive-initialization--lifecycle)
-- [Command System: Advanced Usage](#command-system-advanced-usage)
-- [Events: Filters, Priorities, and Unregistration](#events-filters-priorities-and-unregistration)
-- [GUI: Dynamic, Animated, and Reactive Interfaces](#gui-dynamic-animated-and-reactive-interfaces)
-- [Paginated GUI: Customization & Navigation](#paginated-gui-customization--navigation)
-- [Placeholders: Dynamic Content & Context](#placeholders-dynamic-content--context)
-- [Animation Utilities: Custom Animations & Scheduling](#animation-utilities-custom-animations--scheduling)
-- [Error Handling & Debugging](#error-handling--debugging)
-- [Best Practices & Patterns](#best-practices--patterns)
-- [FAQ & Troubleshooting](#faq--troubleshooting)
-- [License](#license)
+Below is a full example of a minimal plugin using SpigotX, including a command and a GUI.
 
----
-
-## Deep Dive: Initialization & Lifecycle
-
-### How SpigotX Bootstraps
-
-SpigotX requires explicit initialization to bind itself to your plugin instance and set up its internal event bus and command registry.
+### 1. Main Plugin Class
 
 ```java
-@Override
-public void onEnable() {
-    SpigotX.init(this); // Must be called first!
-    SpigotX.registerCommands(new MyCommands());
-}
-```
+// filepath: src/main/java/com/example/MyPlugin.java
+package com.example;
 
-**What happens under the hood?**
-- Stores your plugin instance for global access (`SpigotX.getPlugin()`).
-- Initializes the event system (`Events.init(plugin)`).
-- Prepares command reflection and registration.
+import dev.adam.SpigotX;
+import org.bukkit.plugin.java.JavaPlugin;
 
-**Common Pitfall:**  
-If you forget to call `SpigotX.init(this)`, any call to `SpigotX.getPlugin()` or command/event registration will throw an `IllegalStateException`.
-
----
-
-## Command System: Advanced Usage
-
-### Multiple Executors & Modular Command Classes
-
-You can split commands into multiple classes for modularity:
-
-```java
-SpigotX.registerCommands(new AdminCommands());
-SpigotX.registerCommands(new PlayerCommands());
-```
-
-#### Pro Tip:  
-Organize your commands by feature or permission group for maintainability.
-
-### Subcommands & Argument Parsing
-
-SpigotX supports subcommands and argument parsing by inspecting the method signature:
-
-```java
-@Command(name = "user", description = "User management")
-public void user(CommandSender sender, String[] args) {
-    if (args.length == 0) {
-        sender.sendMessage("/user <info|kick> <player>");
-        return;
-    }
-    switch (args[0].toLowerCase()) {
-        case "info":
-            // ...
-            break;
-        case "kick":
-            // ...
-            break;
-    }
-}
-```
-
-#### Advanced Example: Nested Subcommands
-```java
-@Command(name = "team", description = "Team management")
-public void team(CommandSender sender, String[] args) {
-    if (args.length < 2) {
-        sender.sendMessage("/team <invite|remove> <player>");
-        return;
-    }
-    String action = args[0];
-    String target = args[1];
-    // handle logic...
-}
-```
-
-### Asynchronous Commands
-
-For heavy operations (database, HTTP, etc.), use `@AsyncCommand`:
-
-```java
-@AsyncCommand
-@Command(name = "lookup", description = "Lookup player stats")
-public void lookup(CommandSender sender, String[] args) {
-    // Runs off the main thread!
-    String player = args[0];
-    Stats stats = statsService.fetchStats(player); // Expensive call
-    Bukkit.getScheduler().runTask(SpigotX.getPlugin(), () ->
-        sender.sendMessage("Stats: " + stats)
-    );
-}
-```
-
-#### Tip:  
-Always switch back to the main thread for Bukkit API calls!
-
-### Custom Tab Completion with Context
-
-You can provide context-aware tab completion:
-
-```java
-@TabComplete(handler = DynamicTab.class)
-@Command(name = "warp")
-public void warp(CommandSender sender, String[] args) { /* ... */ }
-
-public static class DynamicTab implements TabHandler {
+public class MyPlugin extends JavaPlugin {
     @Override
-    public List<String> complete(CommandSender sender, String[] args) {
-        if (args.length == 1) {
-            return WarpManager.getAllWarpNames();
-        }
-        return List.of();
+    public void onEnable() {
+        // Initialize SpigotX with your plugin instance
+        SpigotX.init(this);
+
+        // Register your commands
+        SpigotX.registerCommands(new MyCommands());
+
+        // You can also register events or GUIs here
     }
 }
 ```
 
-### Permissions & Usage
-
-- `permission` in `@Command` restricts usage.
-- `usage` provides a usage message if arguments are missing or invalid.
-
-#### Example:
-```java
-@Command(name = "admin", permission = "myplugin.admin", usage = "/admin <reload|status>")
-public void admin(CommandSender sender, String[] args) { ... }
-```
-
----
-
-## Events: Filters, Priorities, and Unregistration
-
-### Registering with Filters and Priorities
-
-You can filter events and set their priority and async status:
+### 2. Simple Command Example
 
 ```java
-Events.register(PlayerInteractEvent.class,
-    ctx -> {
-        Player p = ctx.getPlayer();
-        if (ctx.getEvent().getAction() == Action.RIGHT_CLICK_BLOCK) {
-            p.sendMessage("You right-clicked a block!");
-        }
-    },
-    event -> event.getPlayer().hasPermission("myplugin.special"),
-    EventPriority.HIGH,
-    false, // ignoreCancelled
-    false  // async
-);
-```
+// filepath: src/main/java/com/example/MyCommands.java
+package com.example;
 
-#### Advanced: Unregistering Listeners Dynamically
-```java
-var reg = Events.register(...);
-if (shouldUnregister()) {
-    Events.unregister(reg);
+import dev.adam.commands.Command;
+import org.bukkit.command.CommandSender;
+
+public class MyCommands {
+    // This will register the /hello command
+    @Command(name = "hello", description = "Say hello to the player")
+    public void hello(CommandSender sender, String[] args) {
+        sender.sendMessage("Hello, " + sender.getName() + "!");
+    }
 }
 ```
 
-### Lambda Listeners for Common Events
+**How to use:**  
+- Add `MyCommands.java` to your project.
+- Register it in your `onEnable()` as shown above.
+- Type `/hello` in-game to see the message.
+
+---
+
+## 🧑‍💻 Advanced Command Example – With Arguments, Permissions, and Tab Completion
 
 ```java
-Events.onJoin(ctx -> {
-    ctx.getPlayer().sendMessage("Welcome, " + ctx.getPlayer().getName());
-});
-```
+// filepath: src/main/java/com/example/AdminCommands.java
+package com.example;
 
-### EventContext: Advanced Usage
+import dev.adam.commands.Command;
+import dev.adam.commands.TabComplete;
+import dev.adam.commands.TabHandler;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
-`EventContext<T>` gives you:
-- `getEvent()`
-- `getPlayer()` (if applicable)
-- `setCancelled(boolean)` for cancellable events
+import java.util.List;
 
-Example: Cancel block breaking for non-ops
-
-```java
-Events.onBlockBreak(ctx -> {
-    if (!ctx.getPlayer().isOp()) {
-        ctx.setCancelled(true);
-        ctx.getPlayer().sendMessage("You can't break blocks!");
+public class AdminCommands {
+    // /admin <reload|status>
+    @Command(name = "admin", permission = "myplugin.admin", usage = "/admin <reload|status>")
+    public void admin(CommandSender sender, String[] args) {
+        if (args.length == 0) {
+            sender.sendMessage("Usage: /admin <reload|status>");
+            return;
+        }
+        if (args[0].equalsIgnoreCase("reload")) {
+            sender.sendMessage("Plugin reloaded!");
+        } else if (args[0].equalsIgnoreCase("status")) {
+            sender.sendMessage("Plugin is running.");
+        } else {
+            sender.sendMessage("Unknown subcommand.");
+        }
     }
-});
-```
 
-#### Tip:  
-You can use `EventContext` to access any event property, not just player events.
+    // /warp <warpname> with tab completion
+    @TabComplete(handler = WarpTab.class)
+    @Command(name = "warp", description = "Warp to a location")
+    public void warp(Player player, String[] args) {
+        if (args.length == 0) {
+            player.sendMessage("Usage: /warp <warpname>");
+            return;
+        }
+        String warpName = args[0];
+        // Example: warp logic here
+        player.sendMessage("Warping to " + warpName + "...");
+    }
 
----
-
-## GUI: Dynamic, Animated, and Reactive Interfaces
-
-### Dynamic GUIs
-
-You can update GUIs in real-time based on player actions or external events:
-
-```java
-GUI gui = new GUI(this, "Stats", 3);
-gui.setItem(10, getStatsItem(player), ctx -> {
-    // Refresh stats
-    gui.setItem(10, getStatsItem(ctx.getPlayer()), null);
-});
-```
-
-### Animated Items
-
-```java
-List<ItemStack> frames = List.of(frame1, frame2, frame3);
-Animation anim = new Animation(frames, 5L); // 5 ticks per frame
-gui.setAnimation(13, anim);
-```
-
-### Global Click Handlers
-
-```java
-gui.setGlobalClickHandler(ctx -> {
-    ctx.getPlayer().sendMessage("Clicked slot: " + ctx.getSlot());
-});
-```
-
-### Open/Close Listeners
-
-```java
-gui.setOnOpen(player -> player.sendMessage("GUI opened!"));
-gui.setOnClose(player -> player.sendMessage("GUI closed!"));
-```
-
-### Filling Borders and Rows
-
-```java
-gui.fillBorder(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), ctx -> {});
-gui.fillRow(1, new ItemStack(Material.GOLD_INGOT), ctx -> {});
-```
-
-### Per-Player Customization
-
-You can set items or titles dynamically per player:
-
-```java
-gui.setItem(0, getPersonalizedItem(player), ctx -> {});
-gui.setTitle("Welcome, {player}");
-```
-
-#### Advanced: Reactive GUIs
-You can listen to external events and update the GUI for all viewers:
-```java
-Events.onSomeEvent(e -> {
-    gui.updateAllViewers();
-});
+    public static class WarpTab implements TabHandler {
+        @Override
+        public List<String> complete(CommandSender sender, String[] args) {
+            // Suggest warp names
+            return List.of("spawn", "shop", "arena");
+        }
+    }
+}
 ```
 
 ---
 
-## Paginated GUI: Customization & Navigation
+## ⚡ Asynchronous Commands
 
-### Custom Navigation Buttons
-
-```java
-pgui.setPrevItem(new ItemStack(Material.ARROW));
-pgui.setNextItem(new ItemStack(Material.ARROW));
-```
-
-### Handling Page Changes
+For heavy operations (like database or API calls), use `@AsyncCommand`:
 
 ```java
-pgui.setOnPageChange(page -> {
-    Bukkit.getLogger().info("User switched to page " + page);
-});
+import dev.adam.commands.AsyncCommand;
+import dev.adam.commands.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.Bukkit;
+
+public class LookupCommands {
+    @AsyncCommand
+    @Command(name = "lookup", description = "Lookup player stats")
+    public void lookup(CommandSender sender, String[] args) {
+        if (args.length == 0) {
+            sender.sendMessage("Usage: /lookup <player>");
+            return;
+        }
+        String player = args[0];
+        // Simulate heavy operation
+        String stats = "Kills: 10, Deaths: 2"; // Replace with real lookup
+        // Always switch back to main thread for Bukkit API!
+        Bukkit.getScheduler().runTask(SpigotX.getPlugin(), () ->
+            sender.sendMessage("Stats for " + player + ": " + stats)
+        );
+    }
+}
 ```
-
-### Dynamic Content
-
-```java
-pgui.setContent(fetchItemsForPlayer(player));
-```
-
-#### Tip:  
-Paginated GUIs are ideal for shops, leaderboards, and large inventories.
 
 ---
 
-## Placeholders: Dynamic Content & Context
+## 🎯 Events – Listen and React
 
-### Registering Placeholders
+### Basic Event Listener
 
 ```java
-PlaceholderManager.get().register("rank", p -> getRank(p));
-PlaceholderManager.get().register("balance", p -> String.valueOf(getBalance(p)));
+import dev.adam.events.Events;
+import org.bukkit.event.player.PlayerJoinEvent;
+
+public class MyPlugin extends JavaPlugin {
+    @Override
+    public void onEnable() {
+        SpigotX.init(this);
+
+        // Welcome message on join
+        Events.register(PlayerJoinEvent.class, ctx -> {
+            ctx.getPlayer().sendMessage("Welcome to the server, " + ctx.getPlayer().getName() + "!");
+        });
+    }
+}
 ```
 
-### Using Placeholders in GUIs
+### Cancel Block Breaking for Non-OPs
 
+```java
+import dev.adam.events.Events;
+
+public class MyPlugin extends JavaPlugin {
+    @Override
+    public void onEnable() {
+        SpigotX.init(this);
+
+        Events.onBlockBreak(ctx -> {
+            if (!ctx.getPlayer().isOp()) {
+                ctx.setCancelled(true);
+                ctx.getPlayer().sendMessage("You can't break blocks!");
+            }
+        });
+    }
+}
+```
+
+---
+
+## 🖼️ GUI – Create Interactive Menus
+
+### Simple Clickable GUI
+
+```java
+import dev.adam.gui.GUI;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+public class GuiExample {
+    public void openSimpleGui(Player player) {
+        GUI gui = new GUI(SpigotX.getPlugin(), "My First GUI", 1); // 1 row
+        ItemStack emerald = new ItemStack(Material.EMERALD);
+
+        // Set emerald at slot 4, clicking it sends a message
+        gui.setItem(4, emerald, ctx -> {
+            ctx.getPlayer().sendMessage("You clicked the emerald!");
+        });
+
+        gui.open(player);
+    }
+}
+```
+
+### Animated GUI Item
+
+```java
+import dev.adam.gui.GUI;
+import dev.adam.gui.Animation;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.List;
+
+public class AnimatedGuiExample {
+    public void openAnimatedGui(Player player) {
+        GUI gui = new GUI(SpigotX.getPlugin(), "Animated GUI", 1);
+        List<ItemStack> frames = List.of(
+            new ItemStack(Material.RED_WOOL),
+            new ItemStack(Material.GREEN_WOOL),
+            new ItemStack(Material.BLUE_WOOL)
+        );
+        Animation anim = new Animation(frames, 10L); // 10 ticks per frame
+        gui.setAnimation(4, anim);
+
+        gui.open(player);
+    }
+}
+```
+
+---
+
+## 📄 Paginated GUI – For Large Lists
+
+```java
+import dev.adam.gui.PaginatedGUI;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PaginatedGuiExample {
+    public void openPaginatedGui(Player player) {
+        PaginatedGUI pgui = new PaginatedGUI(SpigotX.getPlugin(), "Shop", 5);
+
+        // Example: Add 50 items
+        List<ItemStack> items = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            ItemStack item = new ItemStack(Material.DIAMOND);
+            items.add(item);
+        }
+        pgui.setContent(items);
+
+        // Set navigation buttons
+        pgui.setPrevItem(new ItemStack(Material.ARROW));
+        pgui.setNextItem(new ItemStack(Material.ARROW));
+
+        pgui.open(player);
+    }
+}
+```
+
+---
+
+## 🏷️ Placeholders – Dynamic Text Everywhere
+
+```java
+import dev.adam.placeholders.PlaceholderManager;
+import org.bukkit.entity.Player;
+
+public class PlaceholderExample {
+    public void setupPlaceholders() {
+        // Register a placeholder {rank}
+        PlaceholderManager.get().register("rank", (Player p) -> "VIP");
+
+        // Register a placeholder {balance}
+        PlaceholderManager.get().register("balance", (Player p) -> "1000");
+    }
+}
+```
+
+**Usage in GUI:**
 ```java
 gui.setTitle("Balance: {balance}");
-gui.setItem(0, new ItemStack(Material.EMERALD), ctx -> {
-    ctx.getPlayer().sendMessage("Your balance: {balance}");
-});
 ```
 
-### Removing Placeholders
+---
+
+## ⏱️ Animation Utilities – Scheduled GUI Updates
 
 ```java
-PlaceholderManager.get().unregister("rank");
+import dev.adam.gui.GUIUpdater;
+import dev.adam.gui.GUI;
+
+public class AnimationUtilExample {
+    public void startUpdatingGui(GUI gui) {
+        // Update slot 0 every second with a random item
+        GUIUpdater.scheduleRepeating(SpigotX.getPlugin(), gui, 20L, g -> {
+            g.setItem(0, getRandomItem(), null);
+        });
+    }
+}
 ```
 
-#### Advanced: Global vs. Per-Player Placeholders
-You can register placeholders that are global or specific to a player context.
+---
+
+## 🛠️ Tips, Best Practices & Common Pitfalls
+
+- **Always call `SpigotX.init(this)` in your `onEnable()` before using any SpigotX features.**
+- **Register commands and events after initialization.**
+- **For GUIs, always close them when done to avoid memory leaks.**
+- **Use async commands for heavy operations, but always return to the main thread for Bukkit API calls.**
+- **Use placeholders for all dynamic text in GUIs and messages.**
+- **Modularize your code: separate commands, GUIs, and event listeners into different classes.**
+- **Check the [JavaDoc](https://adamtroyan.github.io/SpigotX-Javadoc/) for full API documentation.**
+- **If you get an error about SpigotX not being initialized, check that you called `SpigotX.init(this)` first!**
 
 ---
 
-## Animation Utilities: Custom Animations & Scheduling
+## ❓ FAQ
 
-### Scheduling GUI Updates
+**Q:** My command doesn't work!  
+**A:** Make sure you registered it with `SpigotX.registerCommands()` and annotated it with `@Command`.
 
-```java
-GUIUpdater.scheduleRepeating(this, gui, 20L, g -> {
-    // Update GUI every second
-    g.setItem(0, getRandomItem(), null);
-});
-```
-
-### Cancelling Updates
-
-```java
-GUIUpdater.cancel(gui);
-```
-
-#### Tip:  
-Use scheduled updates for progress bars, timers, or animated effects.
-
----
-
-## Error Handling & Debugging
-
-- All core methods throw clear exceptions if misused (e.g., not initialized).
-- Use try/catch for async commands to handle exceptions gracefully.
-- Use logging (`Bukkit.getLogger()`) for debugging event flows.
-- For debugging GUIs, use `gui.debug()` to print the current state.
-
----
-
-## Best Practices & Patterns
-
-- Always unregister listeners and GUI updaters when not needed.
-- Use async commands for heavy operations.
-- Use placeholders for all dynamic text.
-- Modularize commands and GUIs for maintainability.
-- Prefer dependency injection for services used in commands/events.
-- Document your commands and GUIs for future maintainers.
-
----
-
-## FAQ & Troubleshooting
-
-**Q:** Why does my command not appear?  
-**A:** Ensure you called `SpigotX.registerCommands()` and annotated your method with `@Command`.
-
-**Q:** Why do placeholders not update?  
-**A:** Make sure you registered the placeholder and use `{key}` in your text.
-
-**Q:** How do I prevent memory leaks with GUIs?  
-**A:** Use `setAutoUnregisterWhenEmpty(true)` (default) and always close GUIs when done.
+**Q:** How do I update a GUI for all viewers?  
+**A:** Use `gui.updateAllViewers();`
 
 **Q:** Can I use SpigotX with Paper or Purpur?  
 **A:** Yes! SpigotX is compatible with all Spigot forks.
 
-**Q:** How do I contribute or report bugs?  
-**A:** Open an issue or pull request on the [GitHub repository](https://github.com/AdamTroyan/SpigotX).
+**Q:** How do I unregister an event or GUI updater?  
+**A:** Use `Events.unregister(registration)` or `GUIUpdater.cancel(gui)`.
 
 ---
 
-## License
+## 📚 Further Reading
+
+- [SpigotX Javadoc](https://adamtroyan.github.io/SpigotX-Javadoc/)
+- [Spigot Plugin Development Guide](https://www.spigotmc.org/wiki/spigot-plugin-development/)
+- [JitPack Documentation](https://jitpack.io/docs/)
+
+---
+
+## 📝 License
 
 See the main repository for license details.
 
 ---
 
-## Further Reading
-
-- [SpigotX Javadoc](https://adamtroyan.github.io/SpigotX-Javadoc/)
-- [Spigot Plugin Development Guide](https://www.spigotmc.org/wiki/spigot-plugin-development/)
-- [JitPack Documentation](https://jitpack.io/docs/)
+*This README is designed for both beginners and advanced users. If you have suggestions or want to contribute, open an issue or PR on GitHub!*
