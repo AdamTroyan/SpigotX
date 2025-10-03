@@ -16,7 +16,6 @@ import java.util.function.BiConsumer;
 
 public class CommandManager {
     private final Plugin plugin;
-
     private final Map<String, Method> subCommandMap = new HashMap<>();
     private final Map<String, Object> subCommandInstanceMap = new HashMap<>();
     private final Set<String> registeredRoots = new HashSet<>();
@@ -26,10 +25,19 @@ public class CommandManager {
         Arrays.stream(commandClassInstance.getClass().getDeclaredMethods())
             .filter(m -> m.isAnnotationPresent(Command.class))
             .forEach(method -> {
-                registerAnnotatedCommand(commandClassInstance, method);
-
                 Command cmd = method.getAnnotation(Command.class);
                 String name = cmd.name().toLowerCase().trim();
+
+                if (subCommandMap.containsKey(name)) {
+                    throw new IllegalArgumentException("Duplicate command name: " + name);
+                }
+
+                if (method.getParameterCount() != 2 ||
+                        !(method.getParameterTypes()[0] == Player.class || method.getParameterTypes()[0] == CommandSender.class) ||
+                        !method.getParameterTypes()[1].isArray() ||
+                        !method.getParameterTypes()[1].getComponentType().equals(String.class)) {
+                    throw new IllegalArgumentException("Command method " + method.getName() + " must have signature (Player/CommandSender, String[])");
+                }
 
                 subCommandMap.put(name, method);
                 subCommandInstanceMap.put(name, commandClassInstance);
@@ -42,19 +50,29 @@ public class CommandManager {
                         pluginCommand.setExecutor((sender, command, label, args) -> {
                             List<String> parts = new ArrayList<>();
                             parts.add(label.toLowerCase());
-
                             for (String arg : args) parts.add(arg.toLowerCase());
+
+                            if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+                                sender.sendMessage("Available subcommands:");
+                                subCommandMap.forEach((n, m) -> {
+                                    if (n.startsWith(label.toLowerCase() + " ")) {
+                                        Command c = m.getAnnotation(Command.class);
+                                        String perm = c.permission();
+                                        if (perm.isEmpty() || sender.hasPermission(perm)) {
+                                            sender.sendMessage("/" + n + " - " + c.description());
+                                        }
+                                    }
+                                });
+                                return true;
+                            }
 
                             for (int i = parts.size(); i > 0; i--) {
                                 String tryCmd = String.join(" ", parts.subList(0, i));
-
-                                if (subCommandMap.containsKey(tryCmd)) {   
+                                if (subCommandMap.containsKey(tryCmd)) {
                                     Method m = subCommandMap.get(tryCmd);
-
                                     Object inst = subCommandInstanceMap.get(tryCmd);
                                     String[] remainingArgs = parts.subList(i, parts.size()).toArray(new String[0]);
                                     boolean async = m.isAnnotationPresent(AsyncCommand.class);
-
                                     Runnable run = () -> {
                                         try {
                                             if (m.getParameterCount() == 2) {
@@ -64,7 +82,6 @@ public class CommandManager {
                                                         sender.sendMessage("Only players can use this command.");
                                                         return;
                                                     }
-
                                                     m.invoke(inst, sender, remainingArgs);
                                                 } else if (paramType == CommandSender.class) {
                                                     m.invoke(inst, sender, remainingArgs);
@@ -76,24 +93,34 @@ public class CommandManager {
                                             }
                                         } catch (Exception e) {
                                             sender.sendMessage("Command error: " + e.getMessage());
-                                            
                                             e.printStackTrace();
                                         }
                                     };
-
                                     if (async) {
                                         Bukkit.getScheduler().runTaskAsynchronously(plugin, run);
                                     } else {
                                         run.run();
                                     }
-
                                     return true;
                                 }
                             }
-
                             sender.sendMessage("Unknown command.");
-
                             return true;
+                        });
+
+                        pluginCommand.setTabCompleter((sender, command, label, args) -> {
+                            List<String> completions = new ArrayList<>();
+                            String base = label.toLowerCase();
+                            if (args.length == 1) {
+                                for (String key : subCommandMap.keySet()) {
+                                    if (key.startsWith(base + " ")) {
+                                        String sub = key.substring(base.length() + 1).split(" ")[0];
+                                        if (!completions.contains(sub)) completions.add(sub);
+                                    }
+                                }
+                            }
+
+                            return completions;
                         });
                     }
                 }
@@ -105,7 +132,7 @@ public class CommandManager {
         PluginCommand cmd = plugin.getCommand(name);
 
         if (cmd == null) {
-            plugin.getLogger().warning("[SpigotX] Command /" + name + " not found in plugin.yml!");
+            plugin.getLogger().warning("Command /" + name + " not found in plugin.yml!");
             return;
         }
 
