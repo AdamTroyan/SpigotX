@@ -12,7 +12,7 @@ public class PaginatedGUI extends GUI {
 
     public PaginatedGUI(String title, int rows) {
         super(title, rows);
-        this.itemsPerPage = (rows * 9) - 2; // 2 for navigation
+        this.itemsPerPage = (rows * 9) - 2;
     }
 
     public void setContent(List<ItemStack> content) {

@@ -2,6 +2,8 @@ package dev.adam;
 
 import org.bukkit.plugin.Plugin;
 
+import dev.adam.commands.CommandManager;
+
 public class SpigotX {
     private static Plugin plugin;
 
@@ -13,5 +15,11 @@ public class SpigotX {
     public static Plugin getPlugin() {
         if (plugin == null) throw new IllegalStateException("SpigotX.init(plugin) must be called first!");
         return plugin;
+    }
+
+    public static void register(Object commandsInstance) {
+        if (plugin == null)
+            throw new IllegalStateException("SpigotX.init(plugin) must be called before register!");
+        new CommandManager(plugin, commandsInstance);
     }
 }

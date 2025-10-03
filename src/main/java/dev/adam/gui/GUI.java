@@ -55,7 +55,6 @@ public class GUI {
 
     public Inventory getInventory() { return inventory; }
 
-    // יש להפעיל את זה מאזין גלובלי ב-InventoryClickEvent
     public void handleClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         int slot = event.getRawSlot();
@@ -65,7 +64,6 @@ public class GUI {
         }
     }
 
-    // יש להפעיל את זה מאזין גלובלי ב-InventoryCloseEvent
     public void handleClose(InventoryCloseEvent event) {
         if (onClose != null && event.getInventory().equals(inventory)) {
             onClose.accept((Player) event.getPlayer());
