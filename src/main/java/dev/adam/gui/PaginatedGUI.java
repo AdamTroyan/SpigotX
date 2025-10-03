@@ -1,77 +1,53 @@
 package dev.adam.gui;
 
-import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-public class PaginatedGUI {
+public class PaginatedGUI extends GUI {
+    private List<ItemStack> content;
+    private int page = 0;
+    private final int itemsPerPage;
 
-    private final Plugin plugin;
-    private final int rows;
-    private final String title;
-    private final int pageSize;
-    private final List<ItemStack> content = new ArrayList<>();
-    private final int prevSlot;
-    private final int nextSlot;
-
-    private ItemStack prevItem;
-    private ItemStack nextItem;
-    private Consumer<Integer> onPageChange;
-
-    private final GUI gui;
-
-    public PaginatedGUI(Plugin plugin, String title, int rows) {
-        this.plugin = plugin;
-        this.title = title;
-        this.rows = rows;
-        this.pageSize = rows * 9 - 9;
-        this.prevSlot = rows * 9 - 9;
-        this.nextSlot = rows * 9 - 1;
-        this.gui = new GUI(plugin, title, rows);
+    public PaginatedGUI(String title, int rows) {
+        super(title, rows);
+        this.itemsPerPage = (rows * 9) - 2; // 2 for navigation
     }
 
-    public void setContent(List<ItemStack> items) {
-        content.clear();
-        if (items != null) content.addAll(items);
+    public void setContent(List<ItemStack> content) {
+        this.content = content;
+        updatePage();
     }
 
-    public void addItem(ItemStack item) { if (item != null) content.add(item); }
+    public void setPrevItem(ItemStack item) {
+        setItem(0, item, ctx -> {
+            if (page > 0) {
+                page--;
+                updatePage();
+            }
+        });
+    }
 
-    public void setPrevItem(ItemStack item) { this.prevItem = item; }
-    public void setNextItem(ItemStack item) { this.nextItem = item; }
-    public void setOnPageChange(Consumer<Integer> onPageChange) { this.onPageChange = onPageChange; }
+    public void setNextItem(ItemStack item) {
+        setItem(getInventory().getSize() - 1, item, ctx -> {
+            if (content != null && (page + 1) * itemsPerPage < content.size()) {
+                page++;
+                updatePage();
+            }
+        });
+    }
 
-    public GUI openPage(Player player, int page) {
-        if (player == null) return null;
-
-        int pages = Math.max(1, (int) Math.ceil(content.size() / (double) pageSize));
-        int p = Math.max(0, Math.min(page, pages - 1));
-
-        gui.clear();
-        int start = p * pageSize;
-        int end = Math.min(start + pageSize, content.size());
-
-        int slot = 0;
-        for (int i = start; i < end; i++) {
-            final ItemStack it = content.get(i);
-            final int idx = i;
-            gui.setItem(slot++, it, ctx -> {});
+    private void updatePage() {
+        Inventory inv = getInventory();
+        for (int i = 1; i < inv.getSize() - 1; i++) {
+            inv.setItem(i, null);
         }
-
-        if (prevItem != null && p > 0)
-            gui.setItem(prevSlot, prevItem, ctx -> openPage(player, p - 1));
-        if (nextItem != null && p < pages - 1)
-            gui.setItem(nextSlot, nextItem, ctx -> openPage(player, p + 1));
-
-        if (onPageChange != null) onPageChange.accept(p);
-
-        gui.open(player);
-        return gui;
+        if (content == null) return;
+        int start = page * itemsPerPage;
+        int end = Math.min(start + itemsPerPage, content.size());
+        for (int i = start, slot = 1; i < end; i++, slot++) {
+            inv.setItem(slot, content.get(i));
+        }
     }
-
-    public void openFirst(Player player) { openPage(player, 0); }
 }

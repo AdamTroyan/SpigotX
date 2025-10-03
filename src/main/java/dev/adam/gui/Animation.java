@@ -1,27 +1,25 @@
 package dev.adam.gui;
 
 import org.bukkit.inventory.ItemStack;
-
-import java.util.Collections;
 import java.util.List;
 
 public class Animation {
-
     private final List<ItemStack> frames;
-    private final long periodTicks;
-    private int index = 0;
+    private final long ticksPerFrame;
+    private int currentFrame = 0;
 
-    public Animation(List<ItemStack> frames, long periodTicks) {
-        if (frames == null || frames.isEmpty()) throw new IllegalArgumentException("Frames cannot be null or empty");
-        this.frames = Collections.unmodifiableList(frames);
-        this.periodTicks = periodTicks;
+    public Animation(List<ItemStack> frames, long ticksPerFrame) {
+        this.frames = frames;
+        this.ticksPerFrame = ticksPerFrame;
     }
 
-    public synchronized ItemStack current() {
-        return frames.get(index % frames.size()).clone();
+    public ItemStack nextFrame() {
+        ItemStack frame = frames.get(currentFrame);
+        currentFrame = (currentFrame + 1) % frames.size();
+        return frame;
     }
 
-    public synchronized void advance() { index = (index + 1) % frames.size(); }
-
-    public long periodTicks() { return periodTicks; }
+    public long getTicksPerFrame() {
+        return ticksPerFrame;
+    }
 }
