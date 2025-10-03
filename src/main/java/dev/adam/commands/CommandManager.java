@@ -30,7 +30,7 @@ public class CommandManager {
 
                 Command cmd = method.getAnnotation(Command.class);
                 String name = cmd.name().toLowerCase().trim();
-                
+
                 subCommandMap.put(name, method);
                 subCommandInstanceMap.put(name, commandClassInstance);
 
@@ -133,40 +133,42 @@ public class CommandManager {
 
         boolean async = method.isAnnotationPresent(AsyncCommand.class);
 
-        new CommandBuilder()
-            .name(name)
-            .description(desc)
-            .permission(perm)
-            .executor((sender, args) -> {
-                Runnable run = () -> {
-                    try {
-                        if (method.getParameterCount() == 2) {
-                            Class<?> paramType = method.getParameterTypes()[0];
-                            if (paramType == Player.class) {
-                                if (!(sender instanceof Player)) {
-                                    sender.sendMessage("Only players can use this command.");
-                                    return;
+        if (!name.contains(" ")) {
+            new CommandBuilder()
+                    .name(name)
+                    .description(desc)
+                    .permission(perm)
+                    .executor((sender, args) -> {
+                        Runnable run = () -> {
+                            try {
+                                if (method.getParameterCount() == 2) {
+                                    Class<?> paramType = method.getParameterTypes()[0];
+                                    if (paramType == Player.class) {
+                                        if (!(sender instanceof Player)) {
+                                            sender.sendMessage("Only players can use this command.");
+                                            return;
+                                        }
+                                        method.invoke(instance, sender, args);
+                                    } else if (paramType == CommandSender.class) {
+                                        method.invoke(instance, sender, args);
+                                    } else {
+                                        sender.sendMessage("Invalid command method signature.");
+                                    }
+                                } else {
+                                    sender.sendMessage("Invalid command method signature.");
                                 }
-                                method.invoke(instance, sender, args);
-                            } else if (paramType == CommandSender.class) {
-                                method.invoke(instance, sender, args);
-                            } else {
-                                sender.sendMessage("Invalid command method signature.");
+                            } catch (Exception e) {
+                                sender.sendMessage("Command error: " + e.getMessage());
+                                e.printStackTrace();
                             }
+                        };
+                        if (async) {
+                            Bukkit.getScheduler().runTaskAsynchronously(plugin, run);
                         } else {
-                            sender.sendMessage("Invalid command method signature.");
+                            run.run();
                         }
-                    } catch (Exception e) {
-                        sender.sendMessage("Command error: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                };
-                if (async) {
-                    Bukkit.getScheduler().runTaskAsynchronously(plugin, run);
-                } else {
-                    run.run();
-                }
-            })
-            .register();
+                    })
+                    .register();
+        }
     }
 }
