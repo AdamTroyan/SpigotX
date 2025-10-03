@@ -1,121 +1,66 @@
 package dev.adam.gui;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+
 import dev.adam.gui.context.GUIClickContext;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
-public class PaginatedGUI extends GUI {
-    private List<ItemStack> content = new ArrayList<>();
-    private final List<Consumer<GUIClickContext>> itemHandlers = new ArrayList<>();
-    private int page = 0;
-    private int itemsPerPage;
-    private int prevSlot;
-    private int nextSlot;
-    private int bottomRowStart;
-    private int bottomRowEnd;
+public class PaginatedGUI implements GUIBase {
+    private final Inventory inventory;
+    private final Map<Integer, Consumer<GUIClickContext>> handlers = new HashMap<>();
 
-    private Consumer<GUIClickContext> prevHandler = ctx -> {};
-    private Consumer<GUIClickContext> nextHandler = ctx -> {};
+    static {
+        GUIListener.ensureRegistered();
+    }
 
     public PaginatedGUI(String title, int rows) {
-        super(title, rows);
-        int size = rows * 9;
-        bottomRowStart = size - 9;
-        bottomRowEnd = size - 1;
-        prevSlot = bottomRowStart;
-        nextSlot = bottomRowEnd;
-        itemsPerPage = size - 9; 
+        this.inventory = Bukkit.createInventory(this, rows * 9, title);
     }
 
     public void setContent(List<ItemStack> items) {
-        this.content = items != null ? items : new ArrayList<>();
-        this.itemHandlers.clear();
-
-        for (int i = 0; i < content.size(); i++) {
-            this.itemHandlers.add(null);
+        for (int i = 0; i < items.size() && i < inventory.getSize(); i++) {
+            inventory.setItem(i, items.get(i));
         }
-
-        updatePage();
     }
 
-    public void setItemHandler(int index, Consumer<GUIClickContext> handler) {
-        if (index >= 0 && index < itemHandlers.size()) {
-            itemHandlers.set(index, handler);
-        }
+    public void setItemHandler(int slot, Consumer<GUIClickContext> handler) {
+        if (handler != null) handlers.put(slot, handler);
     }
 
     public void setPrevItem(ItemStack item) {
-        super.setItem(prevSlot, item, ctx -> {
-            ctx.getEvent().setCancelled(true);
-
-            if (page > 0) {
-                page--;
-                updatePage();
-            }
-
-            prevHandler.accept(ctx);
-        });
+        inventory.setItem(45, item);
     }
 
     public void setNextItem(ItemStack item) {
-        super.setItem(nextSlot, item, ctx -> {
-            ctx.getEvent().setCancelled(true);
-
-            if ((page + 1) * itemsPerPage < content.size()) {
-                page++;
-                updatePage();
-            }
-
-            nextHandler.accept(ctx);
-        });
+        inventory.setItem(53, item);
     }
 
-    public void setPrevHandler(Consumer<GUIClickContext> handler) {
-        this.prevHandler = handler;
+    public void open(Player player) {
+        player.openInventory(inventory);
     }
 
-    public void setNextHandler(Consumer<GUIClickContext> handler) {
-        this.nextHandler = handler;
+    @Override
+    public Inventory getInventory() {
+        return inventory;
     }
 
-    private void updatePage() {
-        for (int i = 0; i < getInventory().getSize(); i++) {
-            getInventory().setItem(i, null);
-        }
-
-        int start = page * itemsPerPage;
-        int end = Math.min(start + itemsPerPage, content.size());
-        int slot = 0;
-
-        for (int i = start; i < end && slot < itemsPerPage; i++, slot++) {
-            getInventory().setItem(slot, content.get(i));
-        }
+    @Override
+    public boolean hasHandler(int slot) {
+        return handlers.containsKey(slot);
     }
 
     @Override
     public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
-        int slot = event.getRawSlot();
-
-        if (slot == prevSlot || slot == nextSlot) {
-            super.handleClick(event);
-
-            return;
-        }
-
-        if (slot >= 0 && slot < itemsPerPage) {
-            int itemIndex = (page * itemsPerPage) + slot;
-
-            if (itemIndex < content.size()) {
-                event.setCancelled(true);
-                Consumer<GUIClickContext> handler = itemHandlers.get(itemIndex);
-                
-                if (handler != null) {
-                    handler.accept(new GUIClickContext(event));
-                }
-            }
+        Consumer<GUIClickContext> handler = handlers.get(event.getSlot());
+        if (handler != null) {
+            handler.accept(new GUIClickContext(event));
         }
     }
 }

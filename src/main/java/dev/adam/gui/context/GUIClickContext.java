@@ -1,7 +1,7 @@
 package dev.adam.gui.context;
 
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class GUIClickContext {
@@ -16,15 +16,11 @@ public class GUIClickContext {
     }
 
     public int getSlot() {
-        return event.getRawSlot();
+        return event.getSlot();
     }
 
     public ItemStack getClickedItem() {
         return event.getCurrentItem();
-    }
-
-    public InventoryClickEvent getEvent() {
-        return event;
     }
 
     public void cancel() {
