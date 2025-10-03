@@ -79,11 +79,19 @@ public class MyPlugin extends JavaPlugin {
         // 1. Initialize SpigotX
         SpigotX.init(this);
 
-        // 2. Register annotated commands
-        SpigotX.registerCommands(new MyCommands());
+        // 2. Register commands (choose your favorite way!)
+        // --- Option 1: Builder style
+        new dev.adam.commands.CommandBuilder()
+            .name("hello")
+            .description("Say hello")
+            .executor((sender, args) -> sender.sendMessage("Hello from CommandBuilder!"))
+            .register();
 
-        // 3. Register events (optional)
-        SpigotX.registerCommands(new AdminCommands());
+        // --- Option 2: CommandManager (annotation class)
+        new dev.adam.commands.CommandManager(this, new MyCommands());
+
+        // --- Option 3: SpigotX static register (annotation class, recommended)
+        SpigotX.registerCommand(new MyOtherCommands());
     }
 }
 ```
@@ -98,9 +106,9 @@ Just annotate your methods and register the class instance:
 ```java
 package com.example;
 
-import dev.adam.commands.Command;
-import dev.adam.commands.AsyncCommand;
-import dev.adam.commands.TabComplete;
+import dev.adam.commands.annotations.Command;
+import dev.adam.commands.annotations.AsyncCommand;
+import dev.adam.commands.annotations.TabComplete;
 import dev.adam.commands.TabHandler;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -145,25 +153,27 @@ public class MyCommands {
 
 ---
 
-## 🧑‍💻 Classic CommandBuilder (Optional)
+## 🧑‍💻 Three Ways to Register Commands
 
-You can also use the builder API for full control:
+You can register commands in any of these ways:
 
+### 1. **CommandBuilder (classic builder style)**
 ```java
-package com.example;
+new dev.adam.commands.CommandBuilder()
+    .name("hello")
+    .description("Say hello")
+    .executor((sender, args) -> sender.sendMessage("Hello from CommandBuilder!"))
+    .register();
+```
 
-import dev.adam.commands.CommandBuilder;
-import org.bukkit.command.CommandSender;
+### 2. **CommandManager (annotation class)**
+```java
+new dev.adam.commands.CommandManager(this, new MyCommands());
+```
 
-public class MyCommands {
-    public void register() {
-        new CommandBuilder()
-            .name("hello")
-            .description("Say hello to the player")
-            .executor((sender, args) -> sender.sendMessage("👋 Hello, " + sender.getName() + "! Welcome to the server."))
-            .register();
-    }
-}
+### 3. **SpigotX static registerCommand (annotation class, recommended)**
+```java
+dev.adam.SpigotX.registerCommand(new MyCommands());
 ```
 
 ---
@@ -321,7 +331,7 @@ public class AnimationUtilExample {
 ## ❓ FAQ
 
 **Q:** My command doesn't work!  
-**A:** Make sure you registered it with `SpigotX.registerCommands()` and annotated it with `@Command`.
+**A:** Make sure you registered it with one of the supported ways (`CommandBuilder`, `CommandManager`, or `SpigotX.registerCommand`) and annotated it with `@Command`.
 
 **Q:** How do I update a GUI for all viewers?  
 **A:** Use `gui.updateAllViewers();`
