@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class GUIBuilder implements GUIBase {
+public class GUIBuilder implements GUIBase{
     private final Inventory inventory;
     private final Map<Integer, Consumer<GUIClickContext>> handlers = new HashMap<>();
     private final Map<Integer, String> slotPermissions = new HashMap<>();
@@ -39,7 +39,7 @@ public class GUIBuilder implements GUIBase {
         player.openInventory(inventory);
     }
 
-    public GUIBase build() {
+    public GUIBuilder build() {
         return this;
     }
 
