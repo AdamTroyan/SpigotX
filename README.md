@@ -31,7 +31,7 @@ SpigotX is distributed via [JitPack](https://jitpack.io/).
 <dependency>
     <groupId>com.github.AdamTroyan</groupId>
     <artifactId>SpigotX</artifactId>
-    <version>v1.0.9</version>
+    <version>v1.4.3</version>
 </dependency>
 ```
 
@@ -43,18 +43,19 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    implementation 'com.github.AdamTroyan:SpigotX:v1.0.9'
+    implementation 'com.github.AdamTroyan:SpigotX:v1.4.3'
 }
 ```
 
 ### Gradle (Kotlin DSL)
+
 ```kotlin
 repositories {
     mavenCentral()
     maven("https://jitpack.io")
 }
 dependencies {
-    implementation("com.github.AdamTroyan:SpigotX:v1.0.9")
+    implementation("com.github.AdamTroyan:SpigotX:v1.4.3")
 }
 ```
 </details>
@@ -80,22 +81,18 @@ public class MyPlugin extends JavaPlugin {
         SpigotX.init(this);
 
         // 2. Register commands (choose your favorite way!)
-        // --- Option 1: Builder style
         new dev.adam.commands.CommandBuilder()
             .name("hello")
             .description("Say hello")
             .executor((sender, args) -> sender.sendMessage("Hello from CommandBuilder!"))
             .register();
 
-        // --- Option 2: CommandManager (annotation class)
-        new dev.adam.commands.CommandManager(this, new MyCommands());
+        // 3. Register annotation-based commands
+        SpigotX.registerCommand(new MyCommands());
 
-        // --- Option 3: SpigotX static register (annotation class, recommended)
-        SpigotX.registerCommand(new MyOtherCommands());
-
-        // 3. Register events (see below for all options)
-        dev.adam.events.EventUtil.listen(this, org.bukkit.event.player.PlayerJoinEvent.class, event -> {
-            event.getPlayer().sendMessage("Welcome with EventUtil!");
+        // 4. Register events
+        SpigotX.on(org.bukkit.event.player.PlayerJoinEvent.class, ctx -> {
+            ctx.getPlayer().sendMessage("Welcome with SpigotX.on!");
         });
     }
 }
@@ -131,8 +128,7 @@ public class MyCommands {
     @Command(name = "lookup", description = "Lookup player stats")
     public void lookup(CommandSender sender, String[] args) {
         // Heavy operation in background
-        String player = args.length > 0 ? args[0] : "unknown";
-        // ... do async work, then send result to sender
+        sender.sendMessage("Looking up stats...");
     }
 
     // Registers /warp with tab completion
@@ -304,8 +300,8 @@ public void openPaginatedGui(Player player) {
     }
     pgui.setContent(items);
 
-    pgui.setPrevItem(new ItemStack(Material.ARROW));
-    pgui.setNextItem(new ItemStack(Material.ARROW));
+    pgui.setPrevButton(new ItemStack(Material.ARROW));
+    pgui.setNextButton(new ItemStack(Material.ARROW));
 
     // Optional: set handler for each item
     for (int i = 0; i < items.size(); i++) {
@@ -369,53 +365,6 @@ public void startUpdatingGui(GUI gui) {
 - **If you get an error about SpigotX not being initialized, check that you called `SpigotX.init(this)` first!**
 - **Use meaningful command descriptions and permissions for better UX and security.**
 - **Document your code and use comments to help future maintainers (or yourself!).**
-- **Use PaginatedGUI for any list over 9 items.**
-- **Use Animation and GUIUpdater for dynamic GUIs.**
-- **Use EventUtil for quick event listeners.**
-- **Use @AsyncCommand for anything that touches a database or external API.**
-- **Use TabHandler for smart tab completion.**
-- **Use GUIBuilder for all your menus, and PaginatedGUI for shops, lists, etc.**
-- **Use PlaceholderManager for all dynamic text, including GUI titles and messages.**
-- **Use CommandBuilder for quick, one-off commands.**
-- **Use CommandManager or SpigotX.registerCommand for annotation-based command classes.**
-- **Use EventBuilder for advanced event handling with context.**
-- **Use EventUtil.listen for simple lambda-based event handling.**
-- **Use SpigotX.on or SpigotX.onEvent for static sugar.**
-- **Use GUIListener and GUIUpdater for all GUIs.**
-- **Use Animation for animated items in GUIs.**
-- **Use fillBorder in GUIBuilder for quick border design.**
-- **Use setOnOpen and setOnClose in GUIBuilder for open/close hooks.**
-- **Use setItemHandler in PaginatedGUI for per-item click actions.**
-- **Use setPrevHandler and setNextHandler in PaginatedGUI for custom navigation.**
-- **Use cancel in GUIClickContext to cancel the event.**
-- **Use sendMessage in GUIClickContext for quick messaging.**
-- **Use getClickedItem in GUIClickContext for item info.**
-- **Use getSlot in GUIClickContext for slot info.**
-- **Use getEvent in GUIClickContext for full event access.**
-- **Use getPlayer in GUIClickContext for player access.**
-- **Use reset in Animation to restart animation.**
-- **Use cancel and cancelAll in GUIUpdater to stop updates.**
-- **Use getOpenGui in GUIListener to get the current GUI for a player.**
-- **Use closeGui in GUIListener to close a GUI for a player.**
-- **Use openGui in GUIListener to open a GUI for a player.**
-- **Use setOnOpen and setOnClose in GUI for open/close hooks.**
-- **Use fillBorder in GUI for quick border design.**
-- **Use setItem in GUI for per-slot actions.**
-- **Use setContent in PaginatedGUI for list content.**
-- **Use setPrevItem and setNextItem in PaginatedGUI for navigation.**
-- **Use setPrevHandler and setNextHandler in PaginatedGUI for navigation actions.**
-- **Use updatePage in PaginatedGUI to refresh the page.**
-- **Use handleClick in GUI for custom click handling.**
-- **Use handleClose in GUI for custom close handling.**
-- **Use getInventory in GUI for inventory access.**
-- **Use getRows in GUI for row count.**
-- **Use getTitle in GUI for title.**
-- **Use getPage in PaginatedGUI for current page.**
-- **Use getItemsPerPage in PaginatedGUI for items per page.**
-- **Use getContent in PaginatedGUI for content list.**
-- **Use getItemHandlers in PaginatedGUI for handlers.**
-- **Use getPrevSlot and getNextSlot in PaginatedGUI for navigation slots.**
-- **Use getBottomRowStart and getBottomRowEnd in PaginatedGUI for bottom row slots.**
 
 ---
 
