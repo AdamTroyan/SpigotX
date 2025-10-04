@@ -30,4 +30,32 @@ public class GUIClickContext {
     public void sendMessage(String msg) {
         getPlayer().sendMessage(msg);
     }
+
+    public int getRawSlot() {
+        return event.getRawSlot();
+    }
+
+    public ItemStack getCursor() {
+        return event.getCursor();
+    }
+
+    public boolean isLeftClick() {
+        return event.isLeftClick();
+    }
+
+    public boolean isRightClick() {
+        return event.isRightClick();
+    }
+
+    public boolean isShiftClick() {
+        return event.isShiftClick();
+    }
+
+    public void closeInventory() {
+        getPlayer().closeInventory();
+    }
+
+    public InventoryClickEvent getEvent() {
+        return event;
+    }
 }
