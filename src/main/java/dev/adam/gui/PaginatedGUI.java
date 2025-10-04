@@ -117,6 +117,11 @@ public class PaginatedGUI implements GUIBase {
         if (player != null) player.openInventory(inventory);
     }
 
+    public int getCurrentPage() {
+        return currentPage;
+    }
+
+
     @Override
     public Inventory getInventory() {
         return inventory;
