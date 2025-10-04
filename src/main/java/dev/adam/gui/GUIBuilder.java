@@ -1,5 +1,6 @@
 package dev.adam.gui;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -27,6 +28,60 @@ public class GUIBuilder implements GUIBase {
         }
         gui.setItem(slot, item, handler);
         if (permission != null && !permission.isEmpty()) slotPermissions.put(slot, permission);
+        return this;
+    }
+
+    public GUIBuilder fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> onClick) {
+        gui.fillRowIfEmpty(row, item, onClick);
+        return this;
+    }
+
+    public GUIBuilder fillColumnIfEmpty(int col, ItemStack item, Consumer<GUIClickContext> onClick) {
+        gui.fillColumnIfEmpty(col, item, onClick);
+        return this;
+    }
+
+    public GUIBuilder clearRow(int row) {
+        gui.clearRow(row);
+        return this;
+    }
+
+    public GUIBuilder clearColumn(int col) {
+        gui.clearColumn(col);
+        return this;
+    }
+
+    public GUIBuilder setItemsBulk(int[] slots, ItemStack item, Consumer<GUIClickContext> onClick) {
+        gui.setItemsBulk(slots, item, onClick);
+        return this;
+    }
+
+    public GUIBuilder fillBorderIfEmpty(ItemStack item, Consumer<GUIClickContext> onClick) {
+        gui.fillBorderIfEmpty(item, onClick);
+        return this;
+    }
+
+    public GUIBuilder replaceItem(Material from, ItemStack to, Consumer<GUIClickContext> onClick) {
+        gui.replaceItem(from, to, onClick);
+        return this;
+    }
+
+    public int getFirstEmptySlotInRow(int row) {
+        return gui.getFirstEmptySlotInRow(row);
+    }
+
+    public GUIBuilder setItemIfEmpty(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
+        gui.setItemIfEmpty(slot, item, onClick);
+        return this;
+    }
+
+    public GUIBuilder setRow(int row, ItemStack[] items, Consumer<GUIClickContext>[] handlers) {
+        gui.setRow(row, items, handlers);
+        return this;
+    }
+
+    public GUIBuilder setBackground(ItemStack item, Consumer<GUIClickContext> onClick) {
+        gui.setBackground(item, onClick);
         return this;
     }
 
