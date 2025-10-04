@@ -90,6 +90,102 @@ public class PaginatedGUI implements GUIBase {
         if ((currentPage + 1) * itemsPerPage >= items.size()) inventory.setItem(lastRowStart + 5, null);
     }
 
+        public void fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> onClick) {
+        int start = (row - 1) * 9;
+        int end = start + 9;
+        for (int i = start; i < end; i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, item);
+                setItemHandler(i, onClick);
+            }
+        }
+    }
+
+    public void fillColumnIfEmpty(int col, ItemStack item, Consumer<GUIClickContext> onClick) {
+        for (int i = col; i < inventory.getSize(); i += 9) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, item);
+                setItemHandler(i, onClick);
+            }
+        }
+    }
+
+    public void clearRow(int row) {
+        int start = (row - 1) * 9;
+        for (int i = start; i < start + 9; i++) {
+            inventory.setItem(i, null);
+            removeHandler(i);
+        }
+    }
+
+    public void clearColumn(int col) {
+        for (int i = col; i < inventory.getSize(); i += 9) {
+            inventory.setItem(i, null);
+            removeHandler(i);
+        }
+    }
+
+    public void setItemsBulk(int[] slots, ItemStack item, Consumer<GUIClickContext> onClick) {
+        for (int slot : slots) {
+            inventory.setItem(slot, item);
+            setItemHandler(slot, onClick);
+        }
+    }
+
+    public void fillBorderIfEmpty(ItemStack item, Consumer<GUIClickContext> onClick) {
+        int size = inventory.getSize();
+        int rows = size / 9;
+        for (int i = 0; i < size; i++) {
+            if (i < 9 || i >= size - 9 || i % 9 == 0 || i % 9 == 8) {
+                if (inventory.getItem(i) == null) {
+                    inventory.setItem(i, item);
+                    setItemHandler(i, onClick);
+                }
+            }
+        }
+    }
+
+    public void replaceItem(org.bukkit.Material from, ItemStack to, Consumer<GUIClickContext> onClick) {
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack current = inventory.getItem(i);
+            if (current != null && current.getType() == from) {
+                inventory.setItem(i, to);
+                setItemHandler(i, onClick);
+            }
+        }
+    }
+
+    public int getFirstEmptySlotInRow(int row) {
+        int start = (row - 1) * 9;
+        for (int i = start; i < start + 9; i++) {
+            if (inventory.getItem(i) == null) return i;
+        }
+        return -1;
+    }
+
+    public void setItemIfEmpty(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
+        if (inventory.getItem(slot) == null) {
+            inventory.setItem(slot, item);
+            setItemHandler(slot, onClick);
+        }
+    }
+
+    public void setRow(int row, ItemStack[] items, Consumer<GUIClickContext>[] handlersArr) {
+        int start = (row - 1) * 9;
+        for (int i = 0; i < 9 && i < items.length; i++) {
+            inventory.setItem(start + i, items[i]);
+            setItemHandler(start + i, handlersArr != null && i < handlersArr.length ? handlersArr[i] : null);
+        }
+    }
+
+    public void setBackground(ItemStack item, Consumer<GUIClickContext> onClick) {
+        for (int i = 0; i < inventory.getSize(); i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, item);
+                setItemHandler(i, onClick);
+            }
+        }
+    }
 
     @Override
     public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
