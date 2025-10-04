@@ -34,10 +34,24 @@ public class PaginatedGUI implements GUIBase {
 
     public void setPrevButton(ItemStack prev) {
         this.prevButton = prev;
+        int lastRowStart = inventory.getSize() - 9;
+        inventory.setItem(lastRowStart + 3, prev);
+
+        setItemHandler(lastRowStart + 3, ctx -> {
+            if (currentPage > 0) openPage(currentPage - 1);
+        });
     }
 
     public void setNextButton(ItemStack next) {
         this.nextButton = next;
+        int lastRowStart = inventory.getSize() - 9;
+        inventory.setItem(lastRowStart + 5, next);
+
+        setItemHandler(lastRowStart + 5, ctx -> {
+            if (items != null && (currentPage + 1) * itemsPerPage < items.size()) {
+                openPage(currentPage + 1);
+            }
+        });
     }
 
     public void openPage(int page) {
@@ -71,27 +85,32 @@ public class PaginatedGUI implements GUIBase {
         } else {
             inventory.setItem(lastRowStart + 5, null);
         }
+
+        if (currentPage == 0) inventory.setItem(lastRowStart + 3, null);
+        if ((currentPage + 1) * itemsPerPage >= items.size()) inventory.setItem(lastRowStart + 5, null);
     }
 
 
     @Override
     public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
-        int slot = event.getSlot();
+        int rawSlot = event.getRawSlot();
         int lastRowStart = inventory.getSize() - 9;
 
-        if (slot == lastRowStart + 3 && currentPage > 0) {
+        if (rawSlot == lastRowStart + 3 && currentPage > 0) {
             openPage(currentPage - 1);
             event.setCancelled(true);
             return;
         }
 
-        if (slot == lastRowStart + 5 && items != null && (currentPage + 1) * itemsPerPage < items.size()) {
+        if (rawSlot == lastRowStart + 5 && items != null && (currentPage + 1) * itemsPerPage < items.size()) {
             openPage(currentPage + 1);
             event.setCancelled(true);
             return;
         }
 
-        Consumer<GUIClickContext> handler = handlers.get(slot);
+        System.out.println("rawSlot: " + rawSlot + ", lastRowStart+3: " + (lastRowStart+3) + ", lastRowStart+5: " + (lastRowStart+5));
+
+        Consumer<GUIClickContext> handler = handlers.get(rawSlot);
         if (handler != null) {
             try {
                 handler.accept(new GUIClickContext(event));
