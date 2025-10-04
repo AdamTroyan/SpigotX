@@ -73,6 +73,7 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
+
     @Override
     public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
         int slot = event.getSlot();
