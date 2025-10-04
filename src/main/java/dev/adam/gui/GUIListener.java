@@ -29,13 +29,18 @@ public class GUIListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!isOurGui(event.getInventory())) return;
         event.setCancelled(true);
+
+        if (event.getClickedInventory() == null) return;
+        if (!(event.getClickedInventory().getHolder() instanceof GUIBase)) return;
+
+        int rawSlot = event.getRawSlot();
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
-        if (gui.hasHandler(event.getSlot())) {
+        if (gui.hasHandler(rawSlot)) {
             try {
                 gui.handleClick(event);
             } catch (Exception e) {
                 e.printStackTrace();
-            }
+            }   
         }
     }
 
