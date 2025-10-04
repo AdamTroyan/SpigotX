@@ -17,6 +17,7 @@ public class EventManager {
             boolean ignoreCancelled
     ) {
         Plugin plugin = SpigotX.getPlugin();
+        if (plugin == null || eventClass == null || handler == null || filter == null) return;
         Listener listener = new Listener() {};
         plugin.getServer().getPluginManager().registerEvent(
                 eventClass,
@@ -24,8 +25,12 @@ public class EventManager {
                 priority,
                 (l, event) -> {
                     if (eventClass.isInstance(event)) {
-                        EventContext<T> ctx = new EventContext<>(eventClass.cast(event));
-                        if (filter.test(ctx)) handler.accept(ctx);
+                        try {
+                            EventContext<T> ctx = new EventContext<>(eventClass.cast(event));
+                            if (filter.test(ctx)) handler.accept(ctx);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 },
                 plugin,

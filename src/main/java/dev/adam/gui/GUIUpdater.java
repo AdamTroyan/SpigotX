@@ -12,6 +12,7 @@ public class GUIUpdater {
     private static final Map<GUI, BukkitTask> tasks = new ConcurrentHashMap<>();
 
     public static void scheduleRepeating(Plugin plugin, GUI gui, long period, Consumer<GUI> update) {
+        if (plugin == null || gui == null || update == null) return;
         cancel(gui);
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -19,7 +20,11 @@ public class GUIUpdater {
                 cancel(gui);
                 return;
             }
-            update.accept(gui);
+            try {
+                update.accept(gui);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }, period, period);
 
         tasks.put(gui, task);
@@ -32,7 +37,6 @@ public class GUIUpdater {
 
     public static void cancelAll() {
         for (BukkitTask task : tasks.values()) task.cancel();
-        
         tasks.clear();
     }
 }

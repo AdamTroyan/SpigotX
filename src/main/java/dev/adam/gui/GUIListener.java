@@ -1,12 +1,12 @@
 package dev.adam.gui;
 
 import dev.adam.SpigotX;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.Plugin;
 
@@ -29,10 +29,13 @@ public class GUIListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!isOurGui(event.getInventory())) return;
         event.setCancelled(true);
-
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
         if (gui.hasHandler(event.getSlot())) {
-            gui.handleClick(event);
+            try {
+                gui.handleClick(event);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -44,9 +47,20 @@ public class GUIListener implements Listener {
     }
 
     @EventHandler
+    public void onInventoryMove(InventoryMoveItemEvent event) {
+        if (isOurGui(event.getSource()) || isOurGui(event.getDestination())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (!isOurGui(event.getInventory())) return;
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
-        gui.handleClose(event);
+        try {
+            gui.handleClose(event);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

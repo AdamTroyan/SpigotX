@@ -21,10 +21,6 @@ public class PaginatedGUI implements GUIBase {
     private ItemStack prevButton;
     private ItemStack nextButton;
 
-    static {
-        GUIListener.ensureRegistered();
-    }
-
     public PaginatedGUI(String title, int rows) {
         if (rows < 2) rows = 2;
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
@@ -46,6 +42,9 @@ public class PaginatedGUI implements GUIBase {
 
     public void openPage(int page) {
         if (items == null || items.isEmpty()) return;
+        if (page < 0) page = 0;
+        int maxPage = (items.size() - 1) / itemsPerPage;
+        if (page > maxPage) page = maxPage;
 
         currentPage = page;
         int lastRowStart = inventory.getSize() - 9;
@@ -93,16 +92,29 @@ public class PaginatedGUI implements GUIBase {
 
         Consumer<GUIClickContext> handler = handlers.get(slot);
         if (handler != null) {
-            handler.accept(new GUIClickContext(event));
+            try {
+                handler.accept(new GUIClickContext(event));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public void setItemHandler(int slot, Consumer<GUIClickContext> handler) {
         if (handler != null) handlers.put(slot, handler);
+        else handlers.remove(slot);
+    }
+
+    public void removeHandler(int slot) {
+        handlers.remove(slot);
+    }
+
+    public Consumer<GUIClickContext> getHandler(int slot) {
+        return handlers.get(slot);
     }
 
     public void open(Player player) {
-        player.openInventory(inventory);
+        if (player != null) player.openInventory(inventory);
     }
 
     @Override

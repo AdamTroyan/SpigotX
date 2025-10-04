@@ -10,16 +10,20 @@ import java.util.function.Consumer;
 
 public class EventUtil {
     public static <T extends Event> void listen(Plugin plugin, Class<T> eventClass, Consumer<T> handler) {
+        if (plugin == null || eventClass == null || handler == null) return;
         Bukkit.getPluginManager().registerEvent(
                 eventClass,
                 new Listener() {},
                 EventPriority.NORMAL,
                 (listener, event) -> {
                     if (eventClass.isInstance(event)) {
-                        handler.accept(eventClass.cast(event));
+                        try {
+                            handler.accept(eventClass.cast(event));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 },
-                
                 plugin
         );
     }

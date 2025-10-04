@@ -19,29 +19,26 @@ public class EventBuilder<T extends Event> {
 
     public EventBuilder<T> handle(Consumer<EventContext<T>> handler) {
         this.handler = handler;
-        
         return this;
     }
 
     public EventBuilder<T> filter(Predicate<EventContext<T>> filter) {
-        this.filter = filter;
-
+        if (filter != null) this.filter = filter;
         return this;
     }
 
     public EventBuilder<T> priority(EventPriority priority) {
-        this.priority = priority;
-
+        if (priority != null) this.priority = priority;
         return this;
     }
 
     public EventBuilder<T> ignoreCancelled(boolean ignore) {
         this.ignoreCancelled = ignore;
-
         return this;
     }
 
     public void register() {
-        EventManager.register(eventClass, handler, filter, priority, ignoreCancelled);
+        if (eventClass != null && handler != null && filter != null)
+            EventManager.register(eventClass, handler, filter, priority, ignoreCancelled);
     }
 }

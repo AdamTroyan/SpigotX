@@ -16,6 +16,8 @@ public class EventContext<T extends Event> {
         try {
             Object obj = event.getClass().getMethod("getPlayer").invoke(event);
             return (obj instanceof Player) ? (Player) obj : null;
-        } catch (Exception ignored) { return null; }
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

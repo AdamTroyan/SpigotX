@@ -26,8 +26,24 @@ public class GUI implements GUIBase {
     }
 
     public void setItem(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
+        if (slot < 0 || slot >= inventory.getSize() || item == null) return;
         inventory.setItem(slot, item);
         if (onClick != null) clickHandlers.put(slot, onClick);
+        else clickHandlers.remove(slot);
+    }
+
+    public void removeItem(int slot) {
+        if (slot < 0 || slot >= inventory.getSize()) return;
+        inventory.setItem(slot, null);
+        clickHandlers.remove(slot);
+    }
+
+    public Consumer<GUIClickContext> getHandler(int slot) {
+        return clickHandlers.get(slot);
+    }
+
+    public void removeHandler(int slot) {
+        clickHandlers.remove(slot);
     }
 
     public void fillBorder(ItemStack item, Consumer<GUIClickContext> onClick) {
@@ -43,11 +59,13 @@ public class GUI implements GUIBase {
     public void setOnClose(Consumer<Player> onClose) { this.onClose = onClose; }
 
     public void open(Player player) {
+        if (player == null) return;
         player.openInventory(inventory);
         if (onOpen != null) onOpen.accept(player);
     }
 
     public void close(Player player) {
+        if (player == null) return;
         player.closeInventory();
         if (onClose != null) onClose.accept(player);
     }
@@ -64,16 +82,22 @@ public class GUI implements GUIBase {
     public void handleClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         int slot = event.getRawSlot();
-        if (clickHandlers.containsKey(slot)) {
+        Consumer<GUIClickContext> handler = clickHandlers.get(slot);
+        if (handler != null) {
             event.setCancelled(true);
-            clickHandlers.get(slot).accept(new GUIClickContext(event));
+            try {
+                handler.accept(new GUIClickContext(event));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     @Override
     public void handleClose(InventoryCloseEvent event) {
         if (onClose != null && event.getInventory().equals(inventory)) {
-            onClose.accept((Player) event.getPlayer());
+            Player player = (Player) event.getPlayer();
+            onClose.accept(player);
         }
     }
 }
