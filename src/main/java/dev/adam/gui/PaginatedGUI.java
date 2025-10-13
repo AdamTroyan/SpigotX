@@ -63,10 +63,9 @@ public class PaginatedGUI implements GUIBase {
     }
 
     private void updateNavigationButtons() {
-        if (items == null || items.isEmpty()) return;
-        
         int lastRowStart = inventory.getSize() - 9;
-        int maxPage = (items.size() - 1) / itemsPerPage;
+        
+        int maxPage = (items == null || items.isEmpty()) ? 0 : (items.size() - 1) / itemsPerPage;
         
         removeHandler(lastRowStart + 3);
         removeHandler(lastRowStart + 5);
@@ -76,7 +75,6 @@ public class PaginatedGUI implements GUIBase {
             setItemHandler(lastRowStart + 3, ctx -> {
                 if (currentPage > 0) {
                     openPage(currentPage - 1);
-                    updateNavigationButtons();
                 }
             });
         } else {
@@ -89,7 +87,6 @@ public class PaginatedGUI implements GUIBase {
             setItemHandler(lastRowStart + 5, ctx -> {
                 if (items != null && (currentPage + 1) * itemsPerPage < items.size()) {
                     openPage(currentPage + 1);
-                    updateNavigationButtons();
                 }
             });
         } else {
@@ -99,7 +96,17 @@ public class PaginatedGUI implements GUIBase {
     }
 
     public void openPage(int page) {
-        if (items == null || items.isEmpty()) return;
+        if (items == null || items.isEmpty()) {
+            int lastRowStart = inventory.getSize() - 9;
+            for (int i = 0; i < lastRowStart; i++) {
+                inventory.setItem(i, null);
+                removeHandler(i);
+            }
+            currentPage = 0;
+            updateNavigationButtons();
+            return;
+        }
+        
         if (page < 0) page = 0;
         int maxPage = (items.size() - 1) / itemsPerPage;
         if (page > maxPage) page = maxPage;
@@ -134,12 +141,12 @@ public class PaginatedGUI implements GUIBase {
     }
 
     public int getTotalPages() {
-        if (items == null || items.isEmpty()) return 0;
+        if (items == null || items.isEmpty()) return 1; 
         return (items.size() - 1) / itemsPerPage + 1;
     }
 
     public boolean hasNextPage() {
-        return items != null && (currentPage + 1) * itemsPerPage < items.size();
+        return items != null && !items.isEmpty() && (currentPage + 1) * itemsPerPage < items.size();
     }
 
     public boolean hasPreviousPage() {
