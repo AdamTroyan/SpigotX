@@ -24,6 +24,7 @@ public class PaginatedGUI implements GUIBase {
     private ItemStack nextButton;
     private Consumer<GUIClickContext> mainItemAction;
     private ItemStack glassPane;
+    private boolean isInitialized = false;
 
     public PaginatedGUI(String title, int rows) {
         if (rows < 2) rows = 2;
@@ -36,36 +37,85 @@ public class PaginatedGUI implements GUIBase {
             meta.setDisplayName(" ");
             glassPane.setItemMeta(meta);
         }
+        
+        initializeBottomRow();
+    }
+
+    private void initializeBottomRow() {
+        int lastRowStart = inventory.getSize() - 9;
+        for (int i = lastRowStart; i < inventory.getSize(); i++) {
+            inventory.setItem(i, glassPane);
+            setItemHandler(i, ctx -> {});
+        }
     }
 
     public void setContent(List<ItemStack> items) {
         this.items = items;
-        openPage(0);
-        updateNavigationButtons();
+        this.currentPage = 0;
+        
+        refreshContent();
+        
+        this.isInitialized = true;
     }
 
     public void setPrevButton(ItemStack prev) {
         this.prevButton = prev;
-        updateNavigationButtons();
+        if (isInitialized) {
+            updateNavigationButtons();
+        }
     }
 
     public void setNextButton(ItemStack next) {
         this.nextButton = next;
-        updateNavigationButtons();
+        if (isInitialized) {
+            updateNavigationButtons();
+        }
     }
 
     public void setGlassPane(ItemStack glassPane) {
-        this.glassPane = glassPane;
-        updateNavigationButtons();
+        if (glassPane != null) {
+            this.glassPane = glassPane;
+            if (isInitialized) {
+                updateNavigationButtons();
+            }
+        }
     }
 
     public void setMainItemAction(Consumer<GUIClickContext> action) {
         this.mainItemAction = action;
+        
+        if (isInitialized && items != null && !items.isEmpty()) {
+            refreshContentHandlers();
+        }
+    }
+
+    private void refreshContent() {
+        openPage(currentPage);
+        updateNavigationButtons();
+    }
+
+    private void refreshContentHandlers() {
+        if (items == null || items.isEmpty()) return;
+        
+        int lastRowStart = inventory.getSize() - 9;
+        int start = currentPage * itemsPerPage;
+        int end = Math.min(start + itemsPerPage, items.size());
+
+        for (int i = start; i < end; i++) {
+            int slot = i - start;
+            if (slot < lastRowStart && inventory.getItem(slot) != null) {
+                final int itemIndex = i;
+                setItemHandler(slot, ctx -> {
+                    if (mainItemAction != null) {
+                        mainItemAction.accept(ctx);
+                    }
+                });
+            }
+        }
     }
 
     private void updateNavigationButtons() {
         int lastRowStart = inventory.getSize() - 9;
-        
         int maxPage = (items == null || items.isEmpty()) ? 0 : (items.size() - 1) / itemsPerPage;
         
         removeHandler(lastRowStart + 3);
@@ -98,11 +148,7 @@ public class PaginatedGUI implements GUIBase {
 
     public void openPage(int page) {
         if (items == null || items.isEmpty()) {
-            int lastRowStart = inventory.getSize() - 9;
-            for (int i = 0; i < lastRowStart; i++) {
-                inventory.setItem(i, null);
-                removeHandler(i);
-            }
+            clearContentArea();
             currentPage = 0;
             updateNavigationButtons();
             return;
@@ -113,26 +159,23 @@ public class PaginatedGUI implements GUIBase {
         if (page > maxPage) page = maxPage;
 
         currentPage = page;
-        int lastRowStart = inventory.getSize() - 9;
-
-        for (int i = 0; i < lastRowStart; i++) {
-            inventory.setItem(i, null);
-            removeHandler(i);
-        }
+        
+        clearContentArea();
 
         int start = page * itemsPerPage;
         int end = Math.min(start + itemsPerPage, items.size());
+        int lastRowStart = inventory.getSize() - 9;
 
         for (int i = start; i < end; i++) {
             int slot = i - start;
-            inventory.setItem(slot, items.get(i));
+            if (slot < lastRowStart) { 
+                ItemStack item = items.get(i);
+                inventory.setItem(slot, item);
 
-            if (mainItemAction != null) {
                 final int itemIndex = i;
                 setItemHandler(slot, ctx -> {
-                    Consumer<GUIClickContext> action = mainItemAction;
-                    if (action != null) {
-                        action.accept(ctx);
+                    if (mainItemAction != null) {
+                        mainItemAction.accept(ctx);
                     }
                 });
             }
@@ -141,8 +184,16 @@ public class PaginatedGUI implements GUIBase {
         updateNavigationButtons();
     }
 
+    private void clearContentArea() {
+        int lastRowStart = inventory.getSize() - 9;
+        for (int i = 0; i < lastRowStart; i++) {
+            inventory.setItem(i, null);
+            removeHandler(i);
+        }
+    }
+
     public int getTotalPages() {
-        if (items == null || items.isEmpty()) return 1; 
+        if (items == null || items.isEmpty()) return 1;
         return (items.size() - 1) / itemsPerPage + 1;
     }
 
@@ -260,14 +311,16 @@ public class PaginatedGUI implements GUIBase {
         
         event.setCancelled(true);
         
-        if (rawSlot < 0 || rawSlot >= inventory.getSize()) return;
+        if (rawSlot < 0 || rawSlot >= inventory.getSize()) {
+            return;
+        }
         
         Consumer<GUIClickContext> handler = handlers.get(rawSlot);
         if (handler != null) {
             try {
                 handler.accept(new GUIClickContext(event));
             } catch (Exception e) {
-                dev.adam.logging.Logger.error("Error handling GUI click at slot " + rawSlot + ": " + e.getMessage());
+
                 e.printStackTrace();
             }
         }
@@ -307,6 +360,23 @@ public class PaginatedGUI implements GUIBase {
 
     public int getItemsPerPage() {
         return itemsPerPage;
+    }
+
+    public boolean isInitialized() {
+        return isInitialized;
+    }
+
+    public void reset() {
+        handlers.clear();
+        items = null;
+        currentPage = 0;
+        isInitialized = false;
+        
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, null);
+        }
+        
+        initializeBottomRow();
     }
 
     @Override
