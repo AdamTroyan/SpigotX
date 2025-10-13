@@ -41,6 +41,7 @@ public class PaginatedGUI implements GUIBase {
     public void setContent(List<ItemStack> items) {
         this.items = items;
         openPage(0);
+        updateNavigationButtons();
     }
 
     public void setPrevButton(ItemStack prev) {
