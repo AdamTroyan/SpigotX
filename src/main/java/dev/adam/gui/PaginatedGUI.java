@@ -2,9 +2,11 @@ package dev.adam.gui;
 
 import dev.adam.gui.context.GUIClickContext;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,11 +23,19 @@ public class PaginatedGUI implements GUIBase {
     private ItemStack prevButton;
     private ItemStack nextButton;
     private Consumer<GUIClickContext> mainItemAction;
+    private ItemStack glassPane;
 
     public PaginatedGUI(String title, int rows) {
         if (rows < 2) rows = 2;
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
         this.itemsPerPage = (rows - 1) * 9;
+        
+        this.glassPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = glassPane.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            glassPane.setItemMeta(meta);
+        }
     }
 
     public void setContent(List<ItemStack> items) {
@@ -35,28 +45,57 @@ public class PaginatedGUI implements GUIBase {
 
     public void setPrevButton(ItemStack prev) {
         this.prevButton = prev;
-        int lastRowStart = inventory.getSize() - 9;
-        inventory.setItem(lastRowStart + 3, prev);
-
-        setItemHandler(lastRowStart + 3, ctx -> {
-            if (currentPage > 0) openPage(currentPage - 1);
-        });
+        updateNavigationButtons();
     }
 
     public void setNextButton(ItemStack next) {
         this.nextButton = next;
-        int lastRowStart = inventory.getSize() - 9;
-        inventory.setItem(lastRowStart + 5, next);
+        updateNavigationButtons();
+    }
 
-        setItemHandler(lastRowStart + 5, ctx -> {
-            if (items != null && (currentPage + 1) * itemsPerPage < items.size()) {
-                openPage(currentPage + 1);
-            }
-        });
+    public void setGlassPane(ItemStack glassPane) {
+        this.glassPane = glassPane;
+        updateNavigationButtons();
     }
 
     public void setMainItemAction(Consumer<GUIClickContext> action) {
         this.mainItemAction = action;
+    }
+
+    private void updateNavigationButtons() {
+        if (items == null || items.isEmpty()) return;
+        
+        int lastRowStart = inventory.getSize() - 9;
+        int maxPage = (items.size() - 1) / itemsPerPage;
+        
+        removeHandler(lastRowStart + 3);
+        removeHandler(lastRowStart + 5);
+        
+        if (currentPage > 0 && prevButton != null) {
+            inventory.setItem(lastRowStart + 3, prevButton);
+            setItemHandler(lastRowStart + 3, ctx -> {
+                if (currentPage > 0) {
+                    openPage(currentPage - 1);
+                    updateNavigationButtons();
+                }
+            });
+        } else {
+            inventory.setItem(lastRowStart + 3, glassPane);
+            setItemHandler(lastRowStart + 3, ctx -> {});
+        }
+        
+        if (currentPage < maxPage && nextButton != null) {
+            inventory.setItem(lastRowStart + 5, nextButton);
+            setItemHandler(lastRowStart + 5, ctx -> {
+                if (items != null && (currentPage + 1) * itemsPerPage < items.size()) {
+                    openPage(currentPage + 1);
+                    updateNavigationButtons();
+                }
+            });
+        } else {
+            inventory.setItem(lastRowStart + 5, glassPane);
+            setItemHandler(lastRowStart + 5, ctx -> {});
+        }
     }
 
     public void openPage(int page) {
@@ -81,30 +120,36 @@ public class PaginatedGUI implements GUIBase {
             inventory.setItem(slot, items.get(i));
 
             if (mainItemAction != null) {
-                setItemHandler(slot, mainItemAction);
+                final int itemIndex = i;
+                setItemHandler(slot, ctx -> {
+                    Consumer<GUIClickContext> action = mainItemAction;
+                    if (action != null) {
+                        action.accept(ctx);
+                    }
+                });
             }
         }
 
-        if (page > 0 && prevButton != null) {
-            inventory.setItem(lastRowStart + 3, prevButton);
-        } else {
-            inventory.setItem(lastRowStart + 3, null);
-        }
-
-        if (end < items.size() && nextButton != null) {
-            inventory.setItem(lastRowStart + 5, nextButton);
-        } else {
-            inventory.setItem(lastRowStart + 5, null);
-        }
-
-        if (currentPage == 0) inventory.setItem(lastRowStart + 3, null);
-        if ((currentPage + 1) * itemsPerPage >= items.size()) inventory.setItem(lastRowStart + 5, null);
+        updateNavigationButtons();
     }
 
-        public void fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> onClick) {
+    public int getTotalPages() {
+        if (items == null || items.isEmpty()) return 0;
+        return (items.size() - 1) / itemsPerPage + 1;
+    }
+
+    public boolean hasNextPage() {
+        return items != null && (currentPage + 1) * itemsPerPage < items.size();
+    }
+
+    public boolean hasPreviousPage() {
+        return currentPage > 0;
+    }
+
+    public void fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> onClick) {
         int start = (row - 1) * 9;
         int end = start + 9;
-        for (int i = start; i < end; i++) {
+        for (int i = start; i < end && i < inventory.getSize(); i++) {
             if (inventory.getItem(i) == null) {
                 inventory.setItem(i, item);
                 setItemHandler(i, onClick);
@@ -113,6 +158,7 @@ public class PaginatedGUI implements GUIBase {
     }
 
     public void fillColumnIfEmpty(int col, ItemStack item, Consumer<GUIClickContext> onClick) {
+        if (col < 0 || col >= 9) return;
         for (int i = col; i < inventory.getSize(); i += 9) {
             if (inventory.getItem(i) == null) {
                 inventory.setItem(i, item);
@@ -123,13 +169,14 @@ public class PaginatedGUI implements GUIBase {
 
     public void clearRow(int row) {
         int start = (row - 1) * 9;
-        for (int i = start; i < start + 9; i++) {
+        for (int i = start; i < start + 9 && i < inventory.getSize(); i++) {
             inventory.setItem(i, null);
             removeHandler(i);
         }
     }
 
     public void clearColumn(int col) {
+        if (col < 0 || col >= 9) return;
         for (int i = col; i < inventory.getSize(); i += 9) {
             inventory.setItem(i, null);
             removeHandler(i);
@@ -138,8 +185,10 @@ public class PaginatedGUI implements GUIBase {
 
     public void setItemsBulk(int[] slots, ItemStack item, Consumer<GUIClickContext> onClick) {
         for (int slot : slots) {
-            inventory.setItem(slot, item);
-            setItemHandler(slot, onClick);
+            if (slot >= 0 && slot < inventory.getSize()) {
+                inventory.setItem(slot, item);
+                setItemHandler(slot, onClick);
+            }
         }
     }
 
@@ -155,7 +204,7 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
-    public void replaceItem(org.bukkit.Material from, ItemStack to, Consumer<GUIClickContext> onClick) {
+    public void replaceItem(Material from, ItemStack to, Consumer<GUIClickContext> onClick) {
         for (int i = 0; i < inventory.getSize(); i++) {
             ItemStack current = inventory.getItem(i);
             if (current != null && current.getType() == from) {
@@ -167,14 +216,14 @@ public class PaginatedGUI implements GUIBase {
 
     public int getFirstEmptySlotInRow(int row) {
         int start = (row - 1) * 9;
-        for (int i = start; i < start + 9; i++) {
+        for (int i = start; i < start + 9 && i < inventory.getSize(); i++) {
             if (inventory.getItem(i) == null) return i;
         }
         return -1;
     }
 
     public void setItemIfEmpty(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
-        if (inventory.getItem(slot) == null) {
+        if (slot >= 0 && slot < inventory.getSize() && inventory.getItem(slot) == null) {
             inventory.setItem(slot, item);
             setItemHandler(slot, onClick);
         }
@@ -182,7 +231,7 @@ public class PaginatedGUI implements GUIBase {
 
     public void setRow(int row, ItemStack[] items, Consumer<GUIClickContext>[] handlersArr) {
         int start = (row - 1) * 9;
-        for (int i = 0; i < 9 && i < items.length; i++) {
+        for (int i = 0; i < 9 && i < items.length && (start + i) < inventory.getSize(); i++) {
             inventory.setItem(start + i, items[i]);
             setItemHandler(start + i, handlersArr != null && i < handlersArr.length ? handlersArr[i] : null);
         }
@@ -200,35 +249,30 @@ public class PaginatedGUI implements GUIBase {
     @Override
     public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
         int rawSlot = event.getRawSlot();
-        int lastRowStart = inventory.getSize() - 9;
-
-        if (rawSlot == lastRowStart + 3 && currentPage > 0) {
-            openPage(currentPage - 1);
-            event.setCancelled(true);
-            return;
-        }
-
-        if (rawSlot == lastRowStart + 5 && items != null && (currentPage + 1) * itemsPerPage < items.size()) {
-            openPage(currentPage + 1);
-            event.setCancelled(true);
-            return;
-        }
-
-        dev.adam.logging.Logger.info("rawSlot: \" + rawSlot + \", lastRowStart+3: \" + (lastRowStart+3) + \", lastRowStart+5: \" + (lastRowStart+5)");
-
+        
+        event.setCancelled(true);
+        
+        if (rawSlot < 0 || rawSlot >= inventory.getSize()) return;
+        
         Consumer<GUIClickContext> handler = handlers.get(rawSlot);
         if (handler != null) {
             try {
                 handler.accept(new GUIClickContext(event));
             } catch (Exception e) {
+                dev.adam.logging.Logger.error("Error handling GUI click at slot " + rawSlot + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
     }
 
     public void setItemHandler(int slot, Consumer<GUIClickContext> handler) {
-        if (handler != null) handlers.put(slot, handler);
-        else handlers.remove(slot);
+        if (slot >= 0 && slot < inventory.getSize()) {
+            if (handler != null) {
+                handlers.put(slot, handler);
+            } else {
+                handlers.remove(slot);
+            }
+        }
     }
 
     public void removeHandler(int slot) {
@@ -240,13 +284,22 @@ public class PaginatedGUI implements GUIBase {
     }
 
     public void open(Player player) {
-        if (player != null) player.openInventory(inventory);
+        if (player != null && player.isOnline()) {
+            player.openInventory(inventory);
+        }
     }
 
     public int getCurrentPage() {
         return currentPage;
     }
 
+    public List<ItemStack> getItems() {
+        return items;
+    }
+
+    public int getItemsPerPage() {
+        return itemsPerPage;
+    }
 
     @Override
     public Inventory getInventory() {
