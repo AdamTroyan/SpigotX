@@ -1,10 +1,10 @@
 package dev.adam.gui;
 
+import dev.adam.gui.context.GUIClickContext;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import dev.adam.gui.context.GUIClickContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +20,7 @@ public class PaginatedGUI implements GUIBase {
     private int itemsPerPage;
     private ItemStack prevButton;
     private ItemStack nextButton;
+    private Consumer<GUIClickContext> mainItemAction;
 
     public PaginatedGUI(String title, int rows) {
         if (rows < 2) rows = 2;
@@ -54,6 +55,10 @@ public class PaginatedGUI implements GUIBase {
         });
     }
 
+    public void setMainItemAction(Consumer<GUIClickContext> action) {
+        this.mainItemAction = action;
+    }
+
     public void openPage(int page) {
         if (items == null || items.isEmpty()) return;
         if (page < 0) page = 0;
@@ -65,13 +70,19 @@ public class PaginatedGUI implements GUIBase {
 
         for (int i = 0; i < lastRowStart; i++) {
             inventory.setItem(i, null);
+            removeHandler(i);
         }
 
         int start = page * itemsPerPage;
         int end = Math.min(start + itemsPerPage, items.size());
 
         for (int i = start; i < end; i++) {
-            inventory.setItem(i - start, items.get(i));
+            int slot = i - start;
+            inventory.setItem(slot, items.get(i));
+
+            if (mainItemAction != null) {
+                setItemHandler(slot, mainItemAction);
+            }
         }
 
         if (page > 0 && prevButton != null) {
@@ -134,7 +145,6 @@ public class PaginatedGUI implements GUIBase {
 
     public void fillBorderIfEmpty(ItemStack item, Consumer<GUIClickContext> onClick) {
         int size = inventory.getSize();
-        int rows = size / 9;
         for (int i = 0; i < size; i++) {
             if (i < 9 || i >= size - 9 || i % 9 == 0 || i % 9 == 8) {
                 if (inventory.getItem(i) == null) {
@@ -204,7 +214,7 @@ public class PaginatedGUI implements GUIBase {
             return;
         }
 
-        System.out.println("rawSlot: " + rawSlot + ", lastRowStart+3: " + (lastRowStart+3) + ", lastRowStart+5: " + (lastRowStart+5));
+        dev.adam.logging.Logger.info("rawSlot: \" + rawSlot + \", lastRowStart+3: \" + (lastRowStart+3) + \", lastRowStart+5: \" + (lastRowStart+5)");
 
         Consumer<GUIClickContext> handler = handlers.get(rawSlot);
         if (handler != null) {
