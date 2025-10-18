@@ -1,224 +1,527 @@
-# SpigotX 🚀
+# SpigotX Framework
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://www.oracle.com/java/)
-[![Spigot](https://img.shields.io/badge/Spigot-1.8%2B-brightgreen.svg)](https://www.spigotmc.org/)
-[![JitPack](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)
+**SpigotX** is a comprehensive, enterprise-grade framework for Minecraft plugin development built on the Bukkit/Spigot API. Designed for both beginners and advanced developers, it provides powerful abstractions, performance optimizations, and modern development patterns to dramatically accelerate plugin creation while maintaining code quality and maintainability.
 
-> A modern, lightweight utility library for Spigot plugin development that eliminates boilerplate code and provides elegant builder patterns for commands, GUIs, and events.
+## 🚀 Core Features
 
-## 🚀 Overview
+### 🎯 Advanced Command System
+- **Annotation-driven architecture** with `@Command`, `@SubCommand`, and `@AsyncCommand`
+- **Automatic command registration** and discovery
+- **Intelligent tab completion** with customizable suggestions
+- **Permission-based access control** with fallback messages
+- **Asynchronous command execution** for database operations
+- **Built-in cooldown management** and rate limiting
 
-SpigotX transforms complex Spigot plugin development into simple, readable code. It offers a suite of tools to streamline command creation, GUI management, and event handling, making it easier for developers to build robust and maintainable plugins.
+### 📡 Enhanced Event Management
+- **Fluent builder pattern** for clean event registration
+- **Middleware chain processing** for cross-cutting concerns
+- **Advanced event filtering** with lambda expressions
+- **Context-aware event handling** with rich metadata
+- **Performance-optimized dispatching** with minimal overhead
+- **Automatic cleanup** and memory management
 
-### Key Features
-- **Command System**: Three flexible ways to create commands.
-- **GUI Framework**: Easy creation of inventory GUIs with pagination and auto-updates.
-- **Event Handling**: Simplified event management with customizable filters and priorities.
+### 🎨 Professional GUI Framework
+- **Complete inventory management** with drag-and-drop support
+- **Paginated interfaces** for large datasets
+- **Theme system** with customizable styles
+- **Smooth animations** and transitions
+- **Click action handling** with event bubbling
+- **Auto-updating content** with real-time data binding
 
-### Who This Project Is For
-- Spigot plugin developers looking to simplify their codebase.
-- Developers who want to reduce boilerplate code and improve code readability.
-- Anyone interested in contributing to a modern, lightweight utility library for Spigot.
+### 🔧 Enterprise Utilities
+- **Advanced placeholder system** with caching and performance monitoring
+- **Robust task scheduler** with failure recovery and metrics
+- **Safe reflection utilities** for NMS operations and version compatibility
+- **Comprehensive validation** with sanitization and security checks
+- **Performance profiling** and monitoring tools
 
-## ✨ Features
-
-### 🎯 **Command System**
-- **Builder Pattern**: Fluent API for simple commands.
-- **Annotations**: Class-based organization for complex plugins.
-- **Direct Registration**: Lambda-style for quick prototyping.
-
-### 🖼️ **GUI Framework**
-- **Easy Creation**: Builder pattern for inventory GUIs.
-- **Pagination**: Built-in support for multi-page inventories.
-- **Auto-Updates**: Dynamic content with automatic refresh.
-- **Event Handling**: Simple event handling for GUI interactions.
-
-### 📈 **Event Handling**
-- **Custom Filters**: Filter events based on player, world, or other criteria.
-- **Priority Management**: Set event priorities to control execution order.
-- **Cancellation Handling**: Handle event cancellations gracefully.
-
-## 🛠️ Tech Stack
-
-- **Programming Language**: Java
-- **Frameworks**: Spigot API
-- **Tools**: Maven, IntelliJ IDEA, Eclipse, NetBeans, VS Code
-
-## 📦 Installation
+## 📦 Installation & Setup
 
 ### Prerequisites
-- Java 8 or later
-- Maven or Gradle
-- Spigot server
+- **Java 8+** (Recommended: Java 17 or higher)
+- **Bukkit/Spigot/Paper** server (1.16+ supported)
+- **Maven or Gradle** build system
 
-### Quick Start
-
-#### Maven
+### Maven Configuration
 ```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
+<dependency>
+    <groupId>dev.adam</groupId>
+    <artifactId>spigotx</artifactId>
+    <version>1.0.0</version>
+    <scope>compile</scope>
+</dependency>
 
-<dependencies>
-    <dependency>
-        <groupId>com.github.AdamTroyan</groupId>
-        <artifactId>SpigotX</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-</dependencies>
+<!-- Shade the framework into your plugin -->
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-shade-plugin</artifactId>
+    <version>3.2.4</version>
+    <configuration>
+        <relocations>
+            <relocation>
+                <pattern>dev.adam.spigotx</pattern>
+                <shadedPattern>your.plugin.libs.spigotx</shadedPattern>
+            </relocation>
+        </relocations>
+    </configuration>
+</plugin>
 ```
 
-#### Gradle
-```groovy
-repositories {
-    maven { url 'https://jitpack.io' }
-}
-
+### Gradle Configuration
+```gradle
 dependencies {
-    implementation 'com.github.AdamTroyan:SpigotX:1.0.0'
+    implementation 'dev.adam:spigotx:1.0.0'
+}
+
+shadowJar {
+    relocate 'dev.adam.spigotx', 'your.plugin.libs.spigotx'
 }
 ```
 
-### Alternative Installation Methods
-- **Docker**: Use Docker to set up a development environment.
-- **Development Setup**: Clone the repository and build using Maven or Gradle.
+## 🏗️ Getting Started
 
-## 🎯 Usage
-
-### Basic Usage
+### Basic Plugin Structure
 ```java
+@Plugin(
+    name = "MyPlugin",
+    version = "1.0.0",
+    description = "Professional plugin using SpigotX"
+)
 public class MyPlugin extends JavaPlugin {
-
+    
+    private DatabaseManager databaseManager;
+    private ConfigManager configManager;
+    
     @Override
     public void onEnable() {
-        // Initialize SpigotX
+        // Initialize SpigotX framework
         SpigotX.initialize(this);
+        
+        // Setup managers
+        this.configManager = new ConfigManager(this);
+        this.databaseManager = new DatabaseManager(configManager.getDatabaseConfig());
+        
+        // Register components
+        registerCommands();
+        registerEvents();
+        registerPlaceholders();
+        
+        getLogger().info("Plugin enabled successfully!");
+    }
+    
+    @Override
+    public void onDisable() {
+        // Cleanup resources
+        if (databaseManager != null) {
+            databaseManager.close();
+        }
+        
+        // Cancel all scheduled tasks
+        Scheduler.cancelAll();
+        
+        getLogger().info("Plugin disabled gracefully!");
+    }
+    
+    private void registerCommands() {
+        CommandManager.registerCommands(this, 
+            new PlayerCommands(this),
+            new AdminCommands(this)
+        );
+    }
+    
+    private void registerEvents() {
+        new PlayerEventHandler(this).register();
+        new WorldEventHandler(this).register();
+    }
+    
+    private void registerPlaceholders() {
+        PlaceholderManager.getInstance()
+            .registerPlayerPlaceholder("level", this::getPlayerLevel)
+            .registerPlayerPlaceholder("coins", this::getPlayerCoins);
+    }
+}
+```
 
-        // Create a command in one line
-        SpigotX.registerCommand("hello", (sender, args) -> {
-            sender.sendMessage("§aHello from SpigotX!");
-            return true;
-        });
+## 🎯 Advanced Usage Examples
 
-        // Create a GUI with builder pattern
-        GUI gui = GUIBuilder.create()
-            .title("§6My GUI")
-            .size(27)
-            .item(13, new ItemStack(Material.DIAMOND))
+### Professional Command Implementation
+```java
+public class PlayerCommands {
+    
+    private final MyPlugin plugin;
+    
+    public PlayerCommands(MyPlugin plugin) {
+        this.plugin = plugin;
+    }
+    
+    @Command(
+        name = "balance",
+        description = "Check your current balance",
+        permission = "economy.balance",
+        usage = "/balance [player]",
+        aliases = {"bal", "money"}
+    )
+    public void balanceCommand(CommandSender sender, String[] args) {
+        if (args.length == 0) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("§cYou must specify a player!");
+                return;
+            }
+            
+            Player player = (Player) sender;
+            double balance = plugin.getEconomyManager().getBalance(player);
+            player.sendMessage(String.format("§aYour balance: §e$%.2f", balance));
+        } else {
+            // Check other player's balance (requires permission)
+            if (!sender.hasPermission("economy.balance.others")) {
+                sender.sendMessage("§cYou don't have permission to check others' balance!");
+                return;
+            }
+            
+            Player target = Bukkit.getPlayer(args[0]);
+            if (target == null) {
+                sender.sendMessage("§cPlayer not found!");
+                return;
+            }
+            
+            double balance = plugin.getEconomyManager().getBalance(target);
+            sender.sendMessage(String.format("§a%s's balance: §e$%.2f", target.getName(), balance));
+        }
+    }
+    
+    @AsyncCommand(
+        name = "transfer",
+        description = "Transfer money to another player",
+        permission = "economy.transfer"
+    )
+    public void transferCommand(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§cOnly players can transfer money!");
+            return;
+        }
+        
+        if (args.length != 2) {
+            sender.sendMessage("§cUsage: /transfer <player> <amount>");
+            return;
+        }
+        
+        Player player = (Player) sender;
+        Player target = Bukkit.getPlayer(args[0]);
+        
+        if (target == null) {
+            player.sendMessage("§cPlayer not found!");
+            return;
+        }
+        
+        try {
+            double amount = Double.parseDouble(args[1]);
+            
+            // Perform transfer (this runs asynchronously)
+            TransferResult result = plugin.getEconomyManager().transfer(player, target, amount);
+            
+            // Switch back to main thread for player messaging
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (result.isSuccess()) {
+                    player.sendMessage(String.format("§aTransferred §e$%.2f §ato %s", amount, target.getName()));
+                    target.sendMessage(String.format("§aReceived §e$%.2f §afrom %s", amount, player.getName()));
+                } else {
+                    player.sendMessage("§c" + result.getErrorMessage());
+                }
+            });
+            
+        } catch (NumberFormatException e) {
+            player.sendMessage("§cInvalid amount!");
+        }
+    }
+}
+```
+
+### Advanced Event Handling
+```java
+public class PlayerEventHandler {
+    
+    private final MyPlugin plugin;
+    
+    public PlayerEventHandler(MyPlugin plugin) {
+        this.plugin = plugin;
+    }
+    
+    public void register() {
+        // Player join with async data loading
+        EventManager.builder()
+            .plugin(plugin)
+            .event(PlayerJoinEvent.class)
+            .handler(this::onPlayerJoin)
+            .register();
+        
+        // Player move with region detection
+        EventManager.builder()
+            .plugin(plugin)
+            .event(PlayerMoveEvent.class)
+            .filter(event -> isSignificantMovement(event))
+            .middleware(new RegionCheckMiddleware())
+            .handler(this::onPlayerMove)
+            .register();
+        
+        // Command processing with security
+        EventManager.builder()
+            .plugin(plugin)
+            .event(PlayerCommandPreprocessEvent.class)
+            .middleware(new CommandSecurityMiddleware())
+            .middleware(new CommandLoggingMiddleware())
+            .handler(this::onCommandProcess)
+            .register();
+    }
+    
+    private void onPlayerJoin(EventContext<PlayerJoinEvent> context) {
+        Player player = context.getEvent().getPlayer();
+        
+        // Set custom join message
+        context.getEvent().setJoinMessage(
+            String.format("§e%s §7joined the server! §8[%d/%d]", 
+                player.getName(), 
+                Bukkit.getOnlinePlayers().size(),
+                Bukkit.getMaxPlayers())
+        );
+        
+        // Load player data asynchronously
+        Scheduler.builder()
+            .async(true)
+            .execute(() -> {
+                PlayerData data = plugin.getDatabaseManager().loadPlayerData(player.getUniqueId());
+                
+                // Update on main thread
+                Scheduler.builder()
+                    .execute(() -> {
+                        plugin.getPlayerManager().loadPlayer(player, data);
+                        
+                        // Send welcome messages
+                        player.sendMessage("§aWelcome back, " + player.getName() + "!");
+                        player.sendMessage("§7Level: §e" + data.getLevel());
+                        player.sendMessage("§7Coins: §6" + data.getCoins());
+                    })
+                    .build()
+                    .schedule();
+            })
+            .build()
+            .schedule();
+    }
+    
+    private boolean isSignificantMovement(PlayerMoveEvent event) {
+        return event.getFrom().distanceSquared(event.getTo()) > 0.01;
+    }
+    
+    private void onPlayerMove(EventContext<PlayerMoveEvent> context) {
+        Player player = context.getEvent().getPlayer();
+        Location to = context.getEvent().getTo();
+        
+        // Check for region changes
+        String currentRegion = plugin.getRegionManager().getRegion(to);
+        String previousRegion = context.getData("previous_region", String.class);
+        
+        if (!Objects.equals(currentRegion, previousRegion)) {
+            handleRegionChange(player, previousRegion, currentRegion);
+            context.setData("previous_region", currentRegion);
+        }
+    }
+    
+    private void handleRegionChange(Player player, String from, String to) {
+        if (to != null) {
+            switch (to) {
+                case "spawn":
+                    player.sendActionBar("§a✦ Welcome to spawn area");
+                    break;
+                case "pvp":
+                    player.sendActionBar("§c⚔ PvP zone - Be careful!");
+                    break;
+                case "shop":
+                    player.sendActionBar("§6$ Shopping district");
+                    break;
+            }
+        }
+    }
+}
+```
+
+### Professional GUI Implementation
+```java
+public class ShopGUI {
+    
+    private final MyPlugin plugin;
+    private final Map<Material, ShopItem> shopItems;
+    
+    public ShopGUI(MyPlugin plugin) {
+        this.plugin = plugin;
+        this.shopItems = loadShopItems();
+    }
+    
+    public void openMainShop(Player player) {
+        PaginatedGUI gui = PaginatedGUI.builder()
+            .title("§6✦ Server Shop ✦")
+            .size(54)
+            .itemsPerPage(36)
+            .items(createShopItems())
+            .theme(createShopTheme())
+            .build();
+        
+        // Configure navigation
+        gui.setPreviousPageItem(45, ItemBuilder.of(Material.ARROW)
+            .name("§7« Previous Page")
+            .lore("§8Click to go back")
+            .build());
+        
+        gui.setNextPageItem(53, ItemBuilder.of(Material.ARROW)
+            .name("§7Next Page »")
+            .lore("§8Click to continue")
+            .build());
+        
+        gui.setPageInfoItem(49, ItemBuilder.of(Material.BOOK)
+            .name("§ePage §f{page} §7of §f{maxPage}")
+            .lore("§7Items: §e{total}")
+            .build());
+        
+        // Add category buttons
+        gui.setItem(48, createCategoryButton("Blocks", Material.STONE), 
+            event -> openCategoryShop(player, "blocks"));
+        gui.setItem(50, createCategoryButton("Tools", Material.DIAMOND_PICKAXE), 
+            event -> openCategoryShop(player, "tools"));
+        
+        gui.open(player);
+    }
+    
+    private List<GUIItem> createShopItems() {
+        return shopItems.entrySet().stream()
+            .map(entry -> new GUIItem(
+                createShopItemStack(entry.getKey(), entry.getValue()),
+                event -> handleShopPurchase((Player) event.getWhoClicked(), entry.getValue())
+            ))
+            .collect(Collectors.toList());
+    }
+    
+    private ItemStack createShopItemStack(Material material, ShopItem item) {
+        return ItemBuilder.of(material)
+            .name("§b" + item.getDisplayName())
+            .lore(
+                "§7Price: §a$" + item.getPrice(),
+                "",
+                "§8• " + item.getDescription(),
+                "",
+                "§eLeft click to buy 1",
+                "§eRight click to buy 64",
+                "§eShift+click for custom amount"
+            )
+            .glow(item.isSpecial())
+            .build();
+    }
+    
+    private void handleShopPurchase(Player player, ShopItem item) {
+        EconomyManager economy = plugin.getEconomyManager();
+        
+        if (!economy.hasBalance(player, item.getPrice())) {
+            player.sendMessage("§cYou don't have enough money!");
+            SoundUtil.playError(player);
+            return;
+        }
+        
+        // Process purchase
+        economy.withdraw(player, item.getPrice());
+        player.getInventory().addItem(new ItemStack(item.getMaterial()));
+        
+        // Send confirmation
+        player.sendMessage(String.format("§aPurchased %s for $%.2f", 
+            item.getDisplayName(), item.getPrice()));
+        SoundUtil.playSuccess(player);
+        
+        // Log transaction
+        plugin.getLogger().info(String.format("Player %s purchased %s for $%.2f", 
+            player.getName(), item.getDisplayName(), item.getPrice()));
+    }
+    
+    private GUITheme createShopTheme() {
+        return GUITheme.builder()
+            .fillItem(ItemBuilder.of(Material.BLACK_STAINED_GLASS_PANE).name(" ").build())
+            .borderItem(ItemBuilder.of(Material.YELLOW_STAINED_GLASS_PANE).name(" ").build())
             .build();
     }
 }
 ```
 
-### Advanced Usage
-- **Custom Commands**: Use annotations to create complex command structures.
-- **Advanced GUI**: Create multi-page GUIs with custom animations and event handling.
-- **Event Filters**: Filter events based on specific criteria.
-
-## 📁 Project Structure
-```
-SpigotX/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── dev/adam/
-│   │   │       ├── commands/
-│   │   │       ├── events/
-│   │   │       ├── gui/
-│   │   │       ├── placeholders/
-│   │   │       ├── scheduler/
-│   │   │       ├── SpigotX.java
-│   │   │       └── utils/
-│   │   └── resources/
-│   └── test/
-│       └── java/
-│           └── dev/adam/
-├── .gitignore
-├── pom.xml
-└── README.md
-```
-
 ## 🔧 Configuration
 
-### Environment Variables
-- Set environment variables for custom configurations.
+### Framework Configuration
+Create `spigotx.yml` in your plugin's data folder:
 
-### Configuration Files
-- Use `config.yml` for plugin-specific configurations.
+```yaml
+# SpigotX Framework Configuration
+spigotx:
+  # Performance settings
+  performance:
+    enable-monitoring: true
+    slow-operation-threshold: 50ms
+    max-async-threads: 4
+  
+  # Command system
+  commands:
+    enable-debug: false
+    default-cooldown: 0
+    permission-message: "&cYou don't have permission!"
+  
+  # Event system  
+  events:
+    enable-debug: false
+    max-middleware-time: 100ms
+    enable-async-events: true
+  
+  # GUI system
+  gui:
+    enable-animations: true
+    update-interval: 1
+    enable-sound-effects: true
+  
+  # Utilities
+  placeholders:
+    cache-duration: 30s
+    enable-metrics: true
+  
+  scheduler:
+    enable-statistics: true
+    max-concurrent-tasks: 10
+```
 
-### Customization Options
-- Customize the behavior of commands, GUIs, and events through configuration files and annotations.
+## 📊 Performance & Best Practices
+
+### Optimization Tips
+- Use `@AsyncCommand` for database operations
+- Implement efficient event filters to reduce processing overhead
+- Cache frequently accessed GUI components
+- Utilize placeholder caching for expensive operations
+- Monitor performance with built-in profiling tools
+
+### Security Considerations
+- Always validate user input with `ValidationUtils`
+- Use permission checks for sensitive operations
+- Implement rate limiting for resource-intensive commands
+- Sanitize data before database operations
 
 ## 🤝 Contributing
 
-### How to Contribute
-- Fork the repository.
-- Create a new branch for your feature or bug fix.
-- Write clean, well-commented code.
-- Submit a pull request.
+We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
 
-### Development Setup
-- Clone the repository.
-- Build the project using Maven or Gradle.
-- Run the tests to ensure everything works as expected.
+- Code style and conventions
+- Testing requirements
+- Pull request process
+- Issue reporting
 
-### Code Style Guidelines
-- Follow the Java coding conventions.
-- Use meaningful variable and method names.
-- Keep the code DRY (Don't Repeat Yourself).
-
-### Pull Request Process
-- Ensure your code is well-tested.
-- Provide clear and concise commit messages.
-- Address any feedback from the maintainers.
-
-## 📝 License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👥 Authors & Contributors
+## 📞 Support & Community
 
-- **Adam Troyan**: Maintainer and primary developer.
-- **Contributors**: List of contributors who have helped improve the project.
-
-## 🐛 Issues & Support
-
-### How to Report Issues
-- Create a new issue on the GitHub repository.
-- Provide a clear and concise description of the issue.
-- Include any relevant code snippets or screenshots.
-
-### Where to Get Help
-- Join the Spigot community forums.
-- Ask questions on Stack Overflow.
-- Contact the maintainers directly.
-
-## 🗺️ Roadmap
-
-### Planned Features
-- Add support for more Spigot API features.
-- Improve GUI customization options.
-- Enhance event handling capabilities.
-
-### Known Issues
-- List any known issues and their status.
-
-### Future Improvements
-- Add more advanced features based on community feedback.
-- Improve documentation and examples.
-- Enhance performance and stability.
-
+- **📖 Documentation**: [GitHub Wiki](https://github.com/adamtroyan/SpigotX/wiki)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/adamtroyan/SpigotX/issues)
 ---
 
-**Additional Guidelines:**
-- Use modern markdown features (badges, collapsible sections, etc.)
-- Include practical, working code examples
-- Make it visually appealing with appropriate emojis
-- Ensure all code snippets are syntactically correct for Java
-- Include relevant badges (build status, version, license, etc.)
-- Make installation instructions copy-pasteable
-- Focus on clarity and developer experience
+**Made with ❤️ for the Minecraft development community**
+
+*SpigotX Framework - Professional plugin development, simplified.*
