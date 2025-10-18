@@ -7,7 +7,6 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 
 public class GUIUpdater {
     private static final Map<GUI, BukkitTask> tasks = new ConcurrentHashMap<>();
@@ -63,20 +62,17 @@ public class GUIUpdater {
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             try {
-                // Check if paused
                 if (config.isPaused()) {
                     logDebug("Update paused for GUI: " + gui.getClass().getSimpleName());
                     return;
                 }
 
-                // Check if should stop when empty
                 if (config.shouldStopWhenEmpty() && gui.getInventory().getViewers().isEmpty()) {
                     logDebug("Stopping update for empty GUI: " + gui.getClass().getSimpleName());
                     cancel(gui);
                     return;
                 }
 
-                // Perform update
                 if (config.isAsyncUpdate()) {
                     runUpdateAsync(plugin, gui, update, config);
                 } else {

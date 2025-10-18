@@ -276,7 +276,7 @@ public class EventUtil {
             Class<? extends Event> eventClass = entry.getKey();
             int count = entry.getValue();
             long totalTime = eventTimes.getOrDefault(eventClass, 0L);
-            double avgTime = count > 0 ? (totalTime / 1_000_000.0) / count : 0; // Convert to milliseconds
+            double avgTime = count > 0 ? (totalTime / 1_000_000.0) / count : 0;
             
             System.out.println(String.format("%s: %d calls, avg %.2fms", 
                 eventClass.getSimpleName(), count, avgTime));

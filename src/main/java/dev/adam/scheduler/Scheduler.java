@@ -108,7 +108,7 @@ public class Scheduler {
     public static BukkitTask runWithRetry(Plugin plugin, Runnable task, int maxRetries, long retryDelay) {
         return runWithRetry(plugin, () -> {
             task.run();
-            return true; // Assume success if no exception
+            return true;
         }, maxRetries, retryDelay, null);
     }
     
@@ -121,7 +121,7 @@ public class Scheduler {
                 attempts++;
                 try {
                     if (task.get()) {
-                        this.cancel(); // Success!
+                        this.cancel();
                         return;
                     }
                 } catch (Exception e) {
@@ -183,7 +183,7 @@ public class Scheduler {
                 }
                 remaining--;
             }
-        }.runTaskTimer(plugin, 0L, 20L); // Every second
+        }.runTaskTimer(plugin, 0L, 20L);
     }
     
     public static <T> CompletableFuture<T> supplyAsync(Plugin plugin, Supplier<T> supplier) {

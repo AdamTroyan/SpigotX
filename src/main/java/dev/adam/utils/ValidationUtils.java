@@ -1,7 +1,6 @@
 package dev.adam.utils;
 
 import java.util.Collection;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class ValidationUtils {
@@ -53,9 +52,7 @@ public class ValidationUtils {
         }
         return true;
     }
-    
-    // === POSITIVE/NEGATIVE CHECKS ===
-    
+
     public static boolean isPositive(int value, String message) {
         if (value <= 0) {
             if (message != null) throw new IllegalArgumentException(message);
@@ -87,9 +84,7 @@ public class ValidationUtils {
         }
         return true;
     }
-    
-    // === LENGTH VALIDATION ===
-    
+
     public static boolean hasMinLength(String str, int minLength, String message) {
         if (str == null || str.length() < minLength) {
             if (message != null) throw new IllegalArgumentException(message);
@@ -161,9 +156,7 @@ public class ValidationUtils {
         }
         return true;
     }
-    
-    // === COMPARISON VALIDATION ===
-    
+
     public static boolean isEqual(Object obj1, Object obj2, String message) {
         boolean equal = (obj1 == null && obj2 == null) || (obj1 != null && obj1.equals(obj2));
         if (!equal) {

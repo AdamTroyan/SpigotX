@@ -30,7 +30,7 @@ public class GUI implements GUIBase {
     private Predicate<Player> openCondition;
     
     private boolean autoRefresh = false;
-    private long refreshInterval = 20L; // ticks
+    private long refreshInterval = 20L;
     private boolean allowPlayerInventoryClick = false;
     private String closeSound = "UI_BUTTON_CLICK";
     private ItemStack backgroundItem;

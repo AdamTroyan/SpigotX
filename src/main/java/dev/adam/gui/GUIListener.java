@@ -20,7 +20,7 @@ public class GUIListener implements Listener {
     private static boolean registered = false;
     private static final Map<UUID, Long> lastClickTime = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> clickCounts = new ConcurrentHashMap<>();
-    private static long clickCooldown = 50; // milliseconds
+    private static long clickCooldown = 50;
     private static int maxClicksPerSecond = 20;
     private static boolean debugMode = false;
     private static final Map<UUID, String> lastGUITypes = new HashMap<>();

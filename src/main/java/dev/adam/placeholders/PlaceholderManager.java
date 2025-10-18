@@ -7,8 +7,6 @@ import org.bukkit.plugin.Plugin;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -25,7 +23,7 @@ public class PlaceholderManager {
     
     private static final Map<String, CachedPlaceholder> placeholderCache = new ConcurrentHashMap<>();
     private static boolean cachingEnabled = true;
-    private static long cacheExpirationTime = 5000; // 5 seconds
+    private static long cacheExpirationTime = 5000;
     
     private static final DecimalFormat MONEY_FORMAT = new DecimalFormat("#,##0.00");
     private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("#,##0");

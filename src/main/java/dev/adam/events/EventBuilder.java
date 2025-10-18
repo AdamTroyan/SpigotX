@@ -225,7 +225,7 @@ public class EventBuilder<T extends Event> {
         
         public TimeoutHandler(Consumer<EventContext<T>> delegate, long timeoutTicks) {
             this.delegate = delegate;
-            this.timeoutTime = System.currentTimeMillis() + (timeoutTicks * 50); // Convert ticks to ms
+            this.timeoutTime = System.currentTimeMillis() + (timeoutTicks * 50);
         }
         
         @Override
