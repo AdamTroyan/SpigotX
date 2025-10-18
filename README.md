@@ -358,8 +358,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **🐛 Bug Reports**: [GitHub Issues](https://github.com/AdamTroyan/SpigotX/issues)
 - **💡 Feature Requests**: [GitHub Discussions](https://github.com/AdamTroyan/SpigotX/discussions)
-- **📚 Documentation**: [Wiki](https://github.com/AdamTroyan/SpigotX/wiki)
-- **💬 Discord**: [Join our community](https://discord.gg/spigotx)
 
 ## 🙏 Acknowledgments
 
