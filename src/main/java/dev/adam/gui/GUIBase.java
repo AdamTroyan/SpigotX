@@ -11,9 +11,16 @@ import org.bukkit.inventory.ItemStack;
 import java.util.*;
 
 public interface GUIBase extends InventoryHolder {
-    default boolean hasHandler(int slot) { return false; }
-    default void handleClick(InventoryClickEvent event) {}
-    default void handleClose(InventoryCloseEvent event) {}
+    default boolean hasHandler(int slot) {
+        return false;
+    }
+
+    default void handleClick(InventoryClickEvent event) {
+    }
+
+    default void handleClose(InventoryCloseEvent event) {
+    }
+
     @Override
     Inventory getInventory();
 
@@ -167,30 +174,30 @@ public interface GUIBase extends InventoryHolder {
 
     default boolean isBorderSlot(int slot) {
         if (!isValidSlot(slot)) return false;
-        
+
         int row = slotToRow(slot);
         int col = slotToColumn(slot);
-        
+
         return row == 0 || row == getRows() - 1 || col == 0 || col == 8;
     }
 
     default boolean isCornerSlot(int slot) {
         if (!isValidSlot(slot)) return false;
-        
+
         int row = slotToRow(slot);
         int col = slotToColumn(slot);
-        
+
         return (row == 0 || row == getRows() - 1) && (col == 0 || col == 8);
     }
 
     default boolean isCenterSlot(int slot) {
         if (!isValidSlot(slot)) return false;
-        
+
         int row = slotToRow(slot);
         int col = slotToColumn(slot);
         int centerRow = getRows() / 2;
         int centerCol = 4;
-        
+
         return row == centerRow && col == centerCol;
     }
 
@@ -255,17 +262,17 @@ public interface GUIBase extends InventoryHolder {
     default boolean matchesPattern(int startSlot, org.bukkit.Material[][] pattern) {
         int startRow = slotToRow(startSlot);
         int startCol = slotToColumn(startSlot);
-        
+
         for (int row = 0; row < pattern.length; row++) {
             for (int col = 0; col < pattern[row].length; col++) {
                 int checkRow = startRow + row;
                 int checkCol = startCol + col;
-                
+
                 if (!isValidCoordinate(checkRow, checkCol)) return false;
-                
+
                 ItemStack item = getItemAt(checkRow, checkCol);
                 org.bukkit.Material expected = pattern[row][col];
-                
+
                 if (expected == null) {
                     if (item != null && !item.getType().isAir()) return false;
                 } else {
@@ -318,7 +325,7 @@ public interface GUIBase extends InventoryHolder {
         System.out.println("Viewers: " + getViewerCount());
         System.out.println("Filled slots: " + getFilledSlotCount());
         System.out.println("Empty slots: " + getEmptySlotCount());
-        
+
         Map<org.bukkit.Material, Integer> stats = getItemStatistics();
         if (!stats.isEmpty()) {
             System.out.println("Items:");
@@ -366,12 +373,12 @@ public interface GUIBase extends InventoryHolder {
             System.err.println("GUI validation failed: inventory is null");
             return false;
         }
-        
+
         if (getSize() <= 0 || getSize() % 9 != 0) {
             System.err.println("GUI validation failed: invalid size " + getSize());
             return false;
         }
-        
+
         return true;
     }
 

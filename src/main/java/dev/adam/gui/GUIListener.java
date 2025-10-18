@@ -56,7 +56,7 @@ public class GUIListener implements Listener {
     private boolean isClickAllowed(Player player) {
         UUID uuid = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
-        
+
         Long lastClick = lastClickTime.get(uuid);
         if (lastClick != null && (currentTime - lastClick) < clickCooldown) {
             logDebug("Click blocked for " + player.getName() + " - cooldown not expired");
@@ -65,7 +65,7 @@ public class GUIListener implements Listener {
 
         Integer clicks = clickCounts.get(uuid);
         if (clicks == null) clicks = 0;
-        
+
         if (clicks >= maxClicksPerSecond) {
             logDebug("Click blocked for " + player.getName() + " - too many clicks per second");
             return false;
@@ -73,11 +73,11 @@ public class GUIListener implements Listener {
 
         lastClickTime.put(uuid, currentTime);
         clickCounts.put(uuid, clicks + 1);
-        
+
         SpigotX.getPlugin().getServer().getScheduler().runTaskLater(
-            SpigotX.getPlugin(), 
-            () -> clickCounts.put(uuid, Math.max(0, clickCounts.getOrDefault(uuid, 0) - 1)), 
-            20L
+                SpigotX.getPlugin(),
+                () -> clickCounts.put(uuid, Math.max(0, clickCounts.getOrDefault(uuid, 0) - 1)),
+                20L
         );
 
         return true;
@@ -86,9 +86,9 @@ public class GUIListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!isOurGui(event.getInventory())) return;
-        
+
         Player player = (Player) event.getWhoClicked();
-        
+
         if (!isClickAllowed(player)) {
             event.setCancelled(true);
             return;
@@ -108,11 +108,11 @@ public class GUIListener implements Listener {
 
         int rawSlot = event.getRawSlot();
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
-        
+
         lastGUITypes.put(player.getUniqueId(), gui.getClass().getSimpleName());
-        
-        logDebug("Processing click for " + player.getName() + 
-                " in " + gui.getClass().getSimpleName() + 
+
+        logDebug("Processing click for " + player.getName() +
+                " in " + gui.getClass().getSimpleName() +
                 " at slot " + rawSlot);
 
         if (gui.hasHandler(rawSlot)) {
@@ -120,12 +120,12 @@ public class GUIListener implements Listener {
                 gui.handleClick(event);
                 logDebug("Successfully handled click for " + player.getName());
             } catch (Exception e) {
-                logError("Error handling click for " + player.getName() + 
+                logError("Error handling click for " + player.getName() +
                         " in " + gui.getClass().getSimpleName(), e);
                 player.sendMessage("§cAn error occurred while processing your click. Please try again.");
             }
         } else {
-            logDebug("No handler found for slot " + rawSlot + 
+            logDebug("No handler found for slot " + rawSlot +
                     " in " + gui.getClass().getSimpleName());
         }
     }
@@ -149,24 +149,24 @@ public class GUIListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!isOurGui(event.getInventory())) return;
-        
+
         Player player = (Player) event.getPlayer();
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
-        
-        logDebug("Processing close event for " + player.getName() + 
+
+        logDebug("Processing close event for " + player.getName() +
                 " in " + gui.getClass().getSimpleName());
-        
+
         try {
             gui.handleClose(event);
-            
+
             UUID uuid = player.getUniqueId();
             lastClickTime.remove(uuid);
             clickCounts.remove(uuid);
             lastGUITypes.remove(uuid);
-            
+
             logDebug("Successfully handled close for " + player.getName());
         } catch (Exception e) {
-            logError("Error handling close for " + player.getName() + 
+            logError("Error handling close for " + player.getName() +
                     " in " + gui.getClass().getSimpleName(), e);
         }
     }
@@ -174,15 +174,15 @@ public class GUIListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!isOurGui(event.getInventory())) return;
-        
+
         Player player = (Player) event.getPlayer();
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
-        
-        logDebug("GUI opened: " + gui.getClass().getSimpleName() + 
+
+        logDebug("GUI opened: " + gui.getClass().getSimpleName() +
                 " by " + player.getName());
-        
+
         lastGUITypes.put(player.getUniqueId(), gui.getClass().getSimpleName());
-        
+
         UUID uuid = player.getUniqueId();
         lastClickTime.remove(uuid);
         clickCounts.remove(uuid);
@@ -191,11 +191,11 @@ public class GUIListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        
+
         lastClickTime.remove(uuid);
         clickCounts.remove(uuid);
         lastGUITypes.remove(uuid);
-        
+
         logDebug("Cleaned up data for disconnected player: " + event.getPlayer().getName());
     }
 
@@ -206,7 +206,7 @@ public class GUIListener implements Listener {
             clickCounts.clear();
             lastGUITypes.clear();
             GUIUpdater.cancelAll();
-            
+
             logDebug("Plugin disabled - cleaned up all GUI data");
         }
     }
@@ -240,7 +240,7 @@ public class GUIListener implements Listener {
         System.out.println("=== GUI Listener Statistics ===");
         System.out.println("Active GUI sessions: " + lastGUITypes.size());
         System.out.println("Players with click tracking: " + lastClickTime.size());
-        
+
         Map<String, Integer> guiStats = getClickStatistics();
         if (!guiStats.isEmpty()) {
             System.out.println("GUI types in use:");

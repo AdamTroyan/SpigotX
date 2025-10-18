@@ -16,7 +16,7 @@ public class GUIBuilder implements GUIBase {
     private final Map<String, Consumer<GUIClickContext>> namedHandlers = new HashMap<>();
     private final List<BuildStep> buildSteps = new ArrayList<>();
     private final Set<String> appliedTemplates = new HashSet<>();
-    
+
     private boolean validateItems = true;
     private boolean autoFillBackground = false;
     private ItemStack defaultBackground;
@@ -26,7 +26,7 @@ public class GUIBuilder implements GUIBase {
     public interface BuildStep {
         void apply(GUIBuilder builder);
     }
-    
+
     public static class GUITemplate {
         private final String name;
         private final Map<Integer, ItemStack> items = new HashMap<>();
@@ -54,11 +54,25 @@ public class GUIBuilder implements GUIBase {
             return this;
         }
 
-        public String getName() { return name; }
-        public Map<Integer, ItemStack> getItems() { return items; }
-        public Map<Integer, Consumer<GUIClickContext>> getHandlers() { return handlers; }
-        public Map<String, Object> getProperties() { return properties; }
-        public Consumer<GUIBuilder> getPostApply() { return postApply; }
+        public String getName() {
+            return name;
+        }
+
+        public Map<Integer, ItemStack> getItems() {
+            return items;
+        }
+
+        public Map<Integer, Consumer<GUIClickContext>> getHandlers() {
+            return handlers;
+        }
+
+        public Map<String, Object> getProperties() {
+            return properties;
+        }
+
+        public Consumer<GUIBuilder> getPostApply() {
+            return postApply;
+        }
     }
 
     public GUIBuilder(String title, int rows) {
@@ -75,12 +89,12 @@ public class GUIBuilder implements GUIBase {
         if (validateItems && (item == null || item.getItemMeta() == null || item.getItemMeta().getDisplayName() == null)) {
             throw new IllegalArgumentException("Item at slot " + slot + " must have a display name when validation is enabled!");
         }
-        
+
         gui.setItem(slot, item, handler);
         if (permission != null && !permission.isEmpty()) {
             slotPermissions.put(slot, permission);
         }
-        
+
         return this;
     }
 
@@ -131,10 +145,10 @@ public class GUIBuilder implements GUIBase {
         for (String row : pattern) {
             for (char c : row.toCharArray()) {
                 if (slot >= gui.getSlotCount()) break;
-                
+
                 ItemStack item = items.get(c);
                 Consumer<GUIClickContext> handler = handlers != null ? handlers.get(c) : null;
-                
+
                 if (item != null) {
                     setItem(slot, item, handler);
                 } else if (c == ' ' && autoFillBackground) {
@@ -150,22 +164,22 @@ public class GUIBuilder implements GUIBase {
         if (appliedTemplates.contains(template.getName())) {
             return this;
         }
-        
+
         for (Map.Entry<Integer, ItemStack> entry : template.getItems().entrySet()) {
             int slot = entry.getKey();
             ItemStack item = entry.getValue();
             Consumer<GUIClickContext> handler = template.getHandlers().get(slot);
             setItem(slot, item, handler);
         }
-        
+
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet()) {
             gui.setProperty(entry.getKey(), entry.getValue());
         }
-        
+
         if (template.getPostApply() != null) {
             template.getPostApply().accept(this);
         }
-        
+
         appliedTemplates.add(template.getName());
         return this;
     }
@@ -188,7 +202,7 @@ public class GUIBuilder implements GUIBase {
         int startCol = topLeft % 9;
         int endRow = bottomRight / 9;
         int endCol = bottomRight % 9;
-        
+
         for (int row = startRow; row <= endRow; row++) {
             for (int col = startCol; col <= endCol; col++) {
                 int slot = row * 9 + col;
@@ -203,11 +217,11 @@ public class GUIBuilder implements GUIBase {
     public GUIBuilder fillCircle(int center, int radius, ItemStack item, Consumer<GUIClickContext> handler) {
         int centerRow = center / 9;
         int centerCol = center % 9;
-        
+
         for (int slot = 0; slot < gui.getSlotCount(); slot++) {
             int row = slot / 9;
             int col = slot % 9;
-            
+
             double distance = Math.sqrt(Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2));
             if (distance <= radius) {
                 setItem(slot, item, handler);
@@ -219,11 +233,11 @@ public class GUIBuilder implements GUIBase {
     public GUIBuilder fillDiamond(int center, int radius, ItemStack item, Consumer<GUIClickContext> handler) {
         int centerRow = center / 9;
         int centerCol = center % 9;
-        
+
         for (int slot = 0; slot < gui.getSlotCount(); slot++) {
             int row = slot / 9;
             int col = slot % 9;
-            
+
             int distance = Math.abs(row - centerRow) + Math.abs(col - centerCol);
             if (distance <= radius) {
                 setItem(slot, item, handler);
@@ -236,7 +250,7 @@ public class GUIBuilder implements GUIBase {
         for (int slot = 0; slot < gui.getSlotCount(); slot++) {
             int row = slot / 9;
             int col = slot % 9;
-            
+
             if ((row + col) % 2 == 0) {
                 setItem(slot, item1, handler1);
             } else {
@@ -250,25 +264,25 @@ public class GUIBuilder implements GUIBase {
         int rows = gui.getRows();
         int cols = 9;
         int top = 0, bottom = rows - 1, left = 0, right = cols - 1;
-        
+
         while (top <= bottom && left <= right) {
             for (int col = left; col <= right; col++) {
                 setItem(top * 9 + col, item, handler);
             }
             top++;
-            
+
             for (int row = top; row <= bottom; row++) {
                 setItem(row * 9 + right, item, handler);
             }
             right--;
-            
+
             if (top <= bottom) {
                 for (int col = right; col >= left; col--) {
                     setItem(bottom * 9 + col, item, handler);
                 }
                 bottom--;
             }
-            
+
             if (left <= right) {
                 for (int row = bottom; row >= top; row--) {
                     setItem(row * 9 + left, item, handler);
@@ -346,7 +360,8 @@ public class GUIBuilder implements GUIBase {
     }
 
     public GUIBuilder quickCloseButton(int slot, Material material, String name, String... lore) {
-        return quickButton(slot, material, name, () -> {}, lore);
+        return quickButton(slot, material, name, () -> {
+        }, lore);
     }
 
     public boolean validate() {
@@ -377,7 +392,7 @@ public class GUIBuilder implements GUIBase {
         System.out.println("Properties: " + (gui.hasProperty("debug") ? "Has debug properties" : "No debug properties"));
         System.out.println("=====================================");
     }
-    
+
     public GUIBuilder fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> onClick) {
         gui.fillRowIfEmpty(row, item, onClick);
         return this;
@@ -457,7 +472,7 @@ public class GUIBuilder implements GUIBase {
             gui.setBackground(defaultBackground, null);
         }
         executeBuildSteps();
-        validate(); 
+        validate();
         gui.open(player);
     }
 
@@ -469,7 +484,7 @@ public class GUIBuilder implements GUIBase {
         validate();
         return gui;
     }
-    
+
     public static GUITemplate createBasicTemplate() {
         return new GUITemplate("basic")
                 .setItem(0, GUI.createItem(Material.GRAY_STAINED_GLASS_PANE, " "), null)
@@ -478,19 +493,19 @@ public class GUIBuilder implements GUIBase {
 
     public static GUITemplate createNavigationTemplate() {
         GUITemplate template = new GUITemplate("navigation");
-        
+
         template.setItem(45, GUI.createItem(Material.ARROW, "&cPrevious Page"), ctx -> {
             ctx.sendMessage("Previous page clicked!");
         });
-        
+
         template.setItem(53, GUI.createItem(Material.ARROW, "&aNext Page"), ctx -> {
             ctx.sendMessage("Next page clicked!");
         });
-        
+
         template.setItem(49, GUI.createItem(Material.BARRIER, "&cClose"), ctx -> {
             ctx.closeInventory();
         });
-        
+
         return template;
     }
 
@@ -508,12 +523,12 @@ public class GUIBuilder implements GUIBase {
     public void handleClick(org.bukkit.event.inventory.InventoryClickEvent event) {
         int slot = event.getSlot();
         Player player = (Player) event.getWhoClicked();
-        
+
         if (slotPermissions.containsKey(slot) && !player.hasPermission(slotPermissions.get(slot))) {
             player.sendMessage("§cYou don't have permission to use this button.");
             return;
         }
-        
+
         gui.handleClick(event);
     }
 
@@ -521,11 +536,28 @@ public class GUIBuilder implements GUIBase {
     public void handleClose(org.bukkit.event.inventory.InventoryCloseEvent event) {
         gui.handleClose(event);
     }
-    
-    public String getBuilderName() { return builderName; }
-    public boolean isValidateItems() { return validateItems; }
-    public boolean isAutoFillBackground() { return autoFillBackground; }
-    public ItemStack getDefaultBackground() { return defaultBackground; }
-    public Set<String> getAppliedTemplates() { return new HashSet<>(appliedTemplates); }
-    public GUI getGUI() { return gui; }
+
+    public String getBuilderName() {
+        return builderName;
+    }
+
+    public boolean isValidateItems() {
+        return validateItems;
+    }
+
+    public boolean isAutoFillBackground() {
+        return autoFillBackground;
+    }
+
+    public ItemStack getDefaultBackground() {
+        return defaultBackground;
+    }
+
+    public Set<String> getAppliedTemplates() {
+        return new HashSet<>(appliedTemplates);
+    }
+
+    public GUI getGUI() {
+        return gui;
+    }
 }

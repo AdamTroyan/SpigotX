@@ -9,7 +9,6 @@ import org.bukkit.plugin.Plugin;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class TabCompleterBuilder {
@@ -130,20 +129,20 @@ public class TabCompleterBuilder {
     public TabCompleterBuilder cached(long cacheTimeMs) {
         Map<String, CachedCompletion> cache = new HashMap<>();
         BiFunction<CommandSender, String[], List<String>> originalCompleter = this.completer;
-        
+
         this.completer = (sender, args) -> {
             String key = sender.getName() + ":" + Arrays.toString(args);
             CachedCompletion cached = cache.get(key);
-            
+
             if (cached != null && !cached.isExpired()) {
                 return cached.getCompletions();
             }
-            
+
             List<String> result = originalCompleter != null ? originalCompleter.apply(sender, args) : complete(sender, args);
             cache.put(key, new CachedCompletion(result, cacheTimeMs));
             return result;
         };
-        
+
         return this;
     }
 
@@ -151,16 +150,16 @@ public class TabCompleterBuilder {
         if (completer != null) {
             return filterCompletions(completer.apply(sender, args), args);
         }
-        
+
         int argIndex = args.length - 1;
         if (argIndex >= 0 && argCompletions.containsKey(argIndex)) {
             return filterCompletions(argCompletions.get(argIndex).apply(sender), args);
         }
-        
+
         if (defaultCompletion != null) {
             return filterCompletions(defaultCompletion.apply(sender), args);
         }
-        
+
         return Collections.emptyList();
     }
 
@@ -168,7 +167,7 @@ public class TabCompleterBuilder {
         if (completions == null || completions.isEmpty() || args.length == 0) {
             return completions != null ? completions : Collections.emptyList();
         }
-        
+
         String lastArg = args[args.length - 1].toLowerCase();
         return completions.stream()
                 .filter(completion -> completion.toLowerCase().startsWith(lastArg))
@@ -179,16 +178,16 @@ public class TabCompleterBuilder {
     private static class CachedCompletion {
         private final List<String> completions;
         private final long expirationTime;
-        
+
         public CachedCompletion(List<String> completions, long cacheTimeMs) {
             this.completions = completions;
             this.expirationTime = System.currentTimeMillis() + cacheTimeMs;
         }
-        
+
         public List<String> getCompletions() {
             return completions;
         }
-        
+
         public boolean isExpired() {
             return System.currentTimeMillis() > expirationTime;
         }

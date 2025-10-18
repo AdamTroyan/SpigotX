@@ -12,10 +12,23 @@ public class CommandContext {
         this.args = args;
     }
 
-    public CommandSender getSender() { return sender; }
-    public String[] getArgs() { return args; }
-    public Player getPlayer() { return (sender instanceof Player) ? (Player) sender : null; }
+    public CommandSender getSender() {
+        return sender;
+    }
 
-    public void send(String msg) { sender.sendMessage(msg); }
-    public boolean hasPermission(String perm) { return sender.hasPermission(perm); }
+    public String[] getArgs() {
+        return args;
+    }
+
+    public Player getPlayer() {
+        return (sender instanceof Player) ? (Player) sender : null;
+    }
+
+    public void send(String msg) {
+        sender.sendMessage(msg);
+    }
+
+    public boolean hasPermission(String perm) {
+        return sender.hasPermission(perm);
+    }
 }

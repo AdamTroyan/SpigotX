@@ -24,11 +24,11 @@ public class GUI implements GUIBase {
     private final Map<Integer, ItemStack> originalItems = new HashMap<>();
     private final Set<Integer> protectedSlots = new HashSet<>();
     private final Map<String, Object> properties = new ConcurrentHashMap<>();
-    
+
     private Consumer<Player> onOpen, onClose;
     private Consumer<GUIClickContext> globalClickHandler;
     private Predicate<Player> openCondition;
-    
+
     private boolean autoRefresh = false;
     private long refreshInterval = 20L;
     private boolean allowPlayerInventoryClick = false;
@@ -36,7 +36,7 @@ public class GUI implements GUIBase {
     private ItemStack backgroundItem;
     private final Map<Integer, Long> slotCooldowns = new HashMap<>();
     private final Map<Integer, String> slotTooltips = new HashMap<>();
-    
+
     private final Map<Integer, ItemStack[]> animations = new HashMap<>();
     private final Map<Integer, Integer> animationFrames = new HashMap<>();
     private final Map<Integer, Long> animationSpeeds = new HashMap<>();
@@ -45,17 +45,17 @@ public class GUI implements GUIBase {
         this.title = title;
         this.rows = rows;
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
-        
+
         this.backgroundItem = createDefaultBackground();
     }
 
     public void setItem(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
         if (slot < 0 || slot >= inventory.getSize()) return;
-        
+
         if (item != null) {
             originalItems.put(slot, item.clone());
         }
-        
+
         inventory.setItem(slot, item);
         if (onClick != null) {
             clickHandlers.put(slot, onClick);
@@ -111,7 +111,7 @@ public class GUI implements GUIBase {
 
     public void setAnimatedItem(int slot, ItemStack[] frames, long speedTicks, Consumer<GUIClickContext> onClick) {
         if (frames == null || frames.length == 0) return;
-        
+
         animations.put(slot, frames);
         animationFrames.put(slot, 0);
         animationSpeeds.put(slot, speedTicks);
@@ -122,10 +122,10 @@ public class GUI implements GUIBase {
         for (Map.Entry<Integer, ItemStack[]> entry : animations.entrySet()) {
             int slot = entry.getKey();
             ItemStack[] frames = entry.getValue();
-            
+
             int currentFrame = animationFrames.getOrDefault(slot, 0);
             int nextFrame = (currentFrame + 1) % frames.length;
-            
+
             animationFrames.put(slot, nextFrame);
             inventory.setItem(slot, frames[nextFrame]);
         }
@@ -155,10 +155,10 @@ public class GUI implements GUIBase {
         for (String row : pattern) {
             for (char c : row.toCharArray()) {
                 if (slot >= inventory.getSize()) break;
-                
+
                 ItemStack item = mapping.get(c);
                 Consumer<GUIClickContext> handler = handlers != null ? handlers.get(c) : null;
-                
+
                 if (item != null) {
                     setItem(slot, item, handler);
                 } else if (c == ' ') {
@@ -180,7 +180,7 @@ public class GUI implements GUIBase {
         int startCol = topLeft % 9;
         int endRow = bottomRight / 9;
         int endCol = bottomRight % 9;
-        
+
         for (int row = startRow; row <= endRow; row++) {
             for (int col = startCol; col <= endCol; col++) {
                 int slot = row * 9 + col;
@@ -194,7 +194,7 @@ public class GUI implements GUIBase {
     public void fillCircle(int centerSlot, int radius, ItemStack item, Consumer<GUIClickContext> onClick) {
         int centerRow = centerSlot / 9;
         int centerCol = centerSlot % 9;
-        
+
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < 9; col++) {
                 int distance = Math.abs(row - centerRow) + Math.abs(col - centerCol);
@@ -227,7 +227,7 @@ public class GUI implements GUIBase {
         ItemStack item2 = inventory.getItem(slot2);
         Consumer<GUIClickContext> handler1 = clickHandlers.get(slot1);
         Consumer<GUIClickContext> handler2 = clickHandlers.get(slot2);
-        
+
         setItem(slot1, item2, handler2);
         setItem(slot2, item1, handler1);
     }
@@ -235,7 +235,7 @@ public class GUI implements GUIBase {
     public void moveItem(int fromSlot, int toSlot) {
         ItemStack item = inventory.getItem(fromSlot);
         Consumer<GUIClickContext> handler = clickHandlers.get(fromSlot);
-        
+
         removeItem(fromSlot);
         setItem(toSlot, item, handler);
     }
@@ -409,27 +409,27 @@ public class GUI implements GUIBase {
     @Override
     public void handleClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
-        
+
         Player player = (Player) event.getWhoClicked();
         int slot = event.getRawSlot();
         GUIClickContext context = new GUIClickContext(event);
-        
+
         String permission = slotPermissions.get(slot);
         if (permission != null && !player.hasPermission(permission)) {
             context.error("You don't have permission to use this!");
             return;
         }
-        
+
         Long cooldown = slotCooldowns.get(slot);
         if (cooldown != null) {
-            
+
         }
-        
+
         String tooltip = slotTooltips.get(slot);
         if (tooltip != null) {
             context.sendActionBar(tooltip);
         }
-        
+
         if (globalClickHandler != null) {
             try {
                 globalClickHandler.accept(context);
@@ -438,7 +438,7 @@ public class GUI implements GUIBase {
                 e.printStackTrace();
             }
         }
-        
+
         Consumer<GUIClickContext> handler = clickHandlers.get(slot);
         if (handler != null) {
             event.setCancelled(true);
@@ -457,7 +457,7 @@ public class GUI implements GUIBase {
             Player player = (Player) event.getPlayer();
             try {
                 onClose.accept(player);
-                
+
                 if (closeSound != null) {
                     try {
                         org.bukkit.Sound sound = org.bukkit.Sound.valueOf(closeSound);
@@ -473,12 +473,12 @@ public class GUI implements GUIBase {
 
     public void open(Player player) {
         if (player == null) return;
-        
+
         if (openCondition != null && !openCondition.test(player)) {
             player.sendMessage("§cYou cannot open this GUI right now!");
             return;
         }
-        
+
         player.openInventory(inventory);
         if (onOpen != null) {
             try {
@@ -488,22 +488,55 @@ public class GUI implements GUIBase {
             }
         }
     }
-    
-    public String getTitle() { return title; }
-    public int getRows() { return rows; }
-    public Consumer<Player> getOnOpen() { return onOpen; }
-    public Consumer<Player> getOnClose() { return onClose; }
-    public boolean isAutoRefresh() { return autoRefresh; }
-    public long getRefreshInterval() { return refreshInterval; }
-    public boolean isAllowPlayerInventoryClick() { return allowPlayerInventoryClick; }
-    public String getCloseSound() { return closeSound; }
-    public ItemStack getBackgroundItem() { return backgroundItem; }
-    
-    public void setOnOpen(Consumer<Player> onOpen) { this.onOpen = onOpen; }
-    public void setOnClose(Consumer<Player> onClose) { this.onClose = onClose; }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public Consumer<Player> getOnOpen() {
+        return onOpen;
+    }
+
+    public Consumer<Player> getOnClose() {
+        return onClose;
+    }
+
+    public boolean isAutoRefresh() {
+        return autoRefresh;
+    }
+
+    public long getRefreshInterval() {
+        return refreshInterval;
+    }
+
+    public boolean isAllowPlayerInventoryClick() {
+        return allowPlayerInventoryClick;
+    }
+
+    public String getCloseSound() {
+        return closeSound;
+    }
+
+    public ItemStack getBackgroundItem() {
+        return backgroundItem;
+    }
+
+    public void setOnOpen(Consumer<Player> onOpen) {
+        this.onOpen = onOpen;
+    }
+
+    public void setOnClose(Consumer<Player> onClose) {
+        this.onClose = onClose;
+    }
 
     @Override
-    public Inventory getInventory() { return inventory; }
+    public Inventory getInventory() {
+        return inventory;
+    }
 
     @Override
     public boolean hasHandler(int slot) {
@@ -517,7 +550,7 @@ public class GUI implements GUIBase {
     public void removeHandler(int slot) {
         clickHandlers.remove(slot);
     }
-        
+
     public void fillBorder(ItemStack item, Consumer<GUIClickContext> onClick) {
         int size = rows * 9;
         for (int i = 0; i < size; i++) {

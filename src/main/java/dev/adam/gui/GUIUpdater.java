@@ -33,18 +33,49 @@ public class GUIUpdater {
             this.maxRetries = maxRetries;
         }
 
-        public long getPeriod() { return period; }
-        public boolean shouldStopWhenEmpty() { return stopWhenEmpty; }
-        public boolean isAsyncUpdate() { return asyncUpdate; }
-        public int getMaxRetries() { return maxRetries; }
-        public int getCurrentRetries() { return currentRetries; }
-        public long getLastUpdate() { return lastUpdate; }
-        public boolean isPaused() { return paused; }
+        public long getPeriod() {
+            return period;
+        }
 
-        void incrementRetries() { currentRetries++; }
-        void resetRetries() { currentRetries = 0; }
-        void updateLastUpdate() { lastUpdate = System.currentTimeMillis(); }
-        void setPaused(boolean paused) { this.paused = paused; }
+        public boolean shouldStopWhenEmpty() {
+            return stopWhenEmpty;
+        }
+
+        public boolean isAsyncUpdate() {
+            return asyncUpdate;
+        }
+
+        public int getMaxRetries() {
+            return maxRetries;
+        }
+
+        public int getCurrentRetries() {
+            return currentRetries;
+        }
+
+        public long getLastUpdate() {
+            return lastUpdate;
+        }
+
+        public boolean isPaused() {
+            return paused;
+        }
+
+        void incrementRetries() {
+            currentRetries++;
+        }
+
+        void resetRetries() {
+            currentRetries = 0;
+        }
+
+        void updateLastUpdate() {
+            lastUpdate = System.currentTimeMillis();
+        }
+
+        void setPaused(boolean paused) {
+            this.paused = paused;
+        }
     }
 
     public static void scheduleRepeating(Plugin plugin, GUI gui, long period, Consumer<GUI> update) {
@@ -85,7 +116,7 @@ public class GUIUpdater {
         }, config.getPeriod(), config.getPeriod());
 
         tasks.put(gui, task);
-        logDebug("Scheduled repeating update for GUI: " + gui.getClass().getSimpleName() + 
+        logDebug("Scheduled repeating update for GUI: " + gui.getClass().getSimpleName() +
                 " with period: " + config.getPeriod());
     }
 
@@ -142,20 +173,20 @@ public class GUIUpdater {
         GUIUpdateConfig oldConfig = configs.get(gui);
         if (oldConfig != null) {
             GUIUpdateConfig newConfig = new GUIUpdateConfig(
-                newPeriod, 
-                oldConfig.shouldStopWhenEmpty(), 
-                oldConfig.isAsyncUpdate(), 
-                oldConfig.getMaxRetries()
+                    newPeriod,
+                    oldConfig.shouldStopWhenEmpty(),
+                    oldConfig.isAsyncUpdate(),
+                    oldConfig.getMaxRetries()
             );
             scheduleRepeating(plugin, gui, newConfig, update);
-            logDebug("Changed update period for GUI: " + gui.getClass().getSimpleName() + 
+            logDebug("Changed update period for GUI: " + gui.getClass().getSimpleName() +
                     " to: " + newPeriod);
         }
     }
 
-    public static void scheduleConditional(Plugin plugin, GUI gui, long period, 
-                                         java.util.function.Predicate<GUI> condition, 
-                                         Consumer<GUI> update) {
+    public static void scheduleConditional(Plugin plugin, GUI gui, long period,
+                                           java.util.function.Predicate<GUI> condition,
+                                           Consumer<GUI> update) {
         scheduleRepeating(plugin, gui, period, g -> {
             if (condition.test(g)) {
                 update.accept(g);
@@ -226,10 +257,10 @@ public class GUIUpdater {
         for (Map.Entry<GUI, GUIUpdateConfig> entry : configs.entrySet()) {
             GUI gui = entry.getKey();
             GUIUpdateConfig config = entry.getValue();
-            System.out.println("- " + gui.getClass().getSimpleName() + 
-                             ": period=" + config.getPeriod() + 
-                             ", paused=" + config.isPaused() + 
-                             ", viewers=" + gui.getInventory().getViewers().size());
+            System.out.println("- " + gui.getClass().getSimpleName() +
+                    ": period=" + config.getPeriod() +
+                    ", paused=" + config.isPaused() +
+                    ", viewers=" + gui.getInventory().getViewers().size());
         }
         System.out.println("========================");
     }
@@ -256,7 +287,7 @@ public class GUIUpdater {
 
     private static void handleUpdateError(GUI gui, GUIUpdateConfig config, Exception e) {
         config.incrementRetries();
-        logError("Error updating GUI " + gui.getClass().getSimpleName() + 
+        logError("Error updating GUI " + gui.getClass().getSimpleName() +
                 " (retry " + config.getCurrentRetries() + "/" + config.getMaxRetries() + ")", e);
 
         if (config.getCurrentRetries() >= config.getMaxRetries()) {

@@ -1,10 +1,13 @@
 package dev.adam.commands.annotations;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Command {
+public @interface SubCommand {
     String name();
 
     String description() default "";
@@ -12,4 +15,6 @@ public @interface Command {
     String permission() default "";
 
     String usage() default "";
+
+    String parent();
 }

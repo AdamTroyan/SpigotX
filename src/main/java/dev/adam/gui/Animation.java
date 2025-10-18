@@ -1,6 +1,7 @@
 package dev.adam.gui;
 
 import org.bukkit.inventory.ItemStack;
+
 import java.util.List;
 
 public class Animation {
@@ -16,7 +17,7 @@ public class Animation {
     public ItemStack nextFrame() {
         ItemStack frame = frames.get(currentFrame);
         currentFrame = (currentFrame + 1) % frames.size();
-        
+
         return frame;
     }
 

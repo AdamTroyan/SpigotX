@@ -7,6 +7,7 @@ import dev.adam.commands.CommandManager;
 import dev.adam.events.EventBuilder;
 import dev.adam.events.context.EventContext;
 import dev.adam.gui.GUIListener;
+
 import java.util.function.Consumer;
 
 public class SpigotX {
@@ -16,7 +17,7 @@ public class SpigotX {
     public static void init(Plugin pl) {
         plugin = pl;
         System.out.println("SpigotX initialized!");
-        
+
         if (!guiListenerRegistered) {
             pl.getServer().getPluginManager().registerEvents(new GUIListener(), pl);
             guiListenerRegistered = true;
@@ -36,7 +37,7 @@ public class SpigotX {
 
     public static <T extends Event> void on(Class<T> eventClass, Consumer<EventContext<T>> handler) {
         new EventBuilder<>(eventClass)
-            .handle(handler)
-            .register();
+                .handle(handler)
+                .register();
     }
 }

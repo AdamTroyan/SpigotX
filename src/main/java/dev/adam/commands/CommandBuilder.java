@@ -1,6 +1,7 @@
 package dev.adam.commands;
 
 import org.bukkit.command.CommandSender;
+
 import java.util.function.BiConsumer;
 
 public class CommandBuilder {
@@ -29,7 +30,7 @@ public class CommandBuilder {
 
     public CommandBuilder executor(BiConsumer<CommandSender, String[]> exec) {
         this.executor = exec;
-        
+
         return this;
     }
 
