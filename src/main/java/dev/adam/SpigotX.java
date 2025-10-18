@@ -15,7 +15,7 @@ public class SpigotX {
 
     public static void init(Plugin pl) {
         plugin = pl;
-        dev.adam.logging.Logger.info("SpigotX initialized!");
+        System.out.println("SpigotX initialized!");
         
         if (!guiListenerRegistered) {
             pl.getServer().getPluginManager().registerEvents(new GUIListener(), pl);

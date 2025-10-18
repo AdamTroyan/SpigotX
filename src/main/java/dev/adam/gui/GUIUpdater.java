@@ -14,9 +14,6 @@ public class GUIUpdater {
     private static final Map<GUI, GUIUpdateConfig> configs = new ConcurrentHashMap<>();
     private static boolean debugMode = false;
 
-    /**
-     * Configuration for GUI updates
-     */
     public static class GUIUpdateConfig {
         private final long period;
         private final boolean stopWhenEmpty;
@@ -37,7 +34,6 @@ public class GUIUpdater {
             this.maxRetries = maxRetries;
         }
 
-        // Getters
         public long getPeriod() { return period; }
         public boolean shouldStopWhenEmpty() { return stopWhenEmpty; }
         public boolean isAsyncUpdate() { return asyncUpdate; }
@@ -46,14 +42,12 @@ public class GUIUpdater {
         public long getLastUpdate() { return lastUpdate; }
         public boolean isPaused() { return paused; }
 
-        // Internal methods
         void incrementRetries() { currentRetries++; }
         void resetRetries() { currentRetries = 0; }
         void updateLastUpdate() { lastUpdate = System.currentTimeMillis(); }
         void setPaused(boolean paused) { this.paused = paused; }
     }
 
-    // **EXISTING METHODS** (enhanced)
     public static void scheduleRepeating(Plugin plugin, GUI gui, long period, Consumer<GUI> update) {
         scheduleRepeating(plugin, gui, new GUIUpdateConfig(period), update);
     }
@@ -99,11 +93,6 @@ public class GUIUpdater {
                 " with period: " + config.getPeriod());
     }
 
-    // **NEW ADVANCED METHODS**
-
-    /**
-     * Schedule a one-time delayed update
-     */
     public static void scheduleDelayed(Plugin plugin, GUI gui, long delay, Consumer<GUI> update) {
         if (plugin == null || gui == null || update == null) return;
 
@@ -119,9 +108,6 @@ public class GUIUpdater {
         }, delay);
     }
 
-    /**
-     * Schedule async update
-     */
     public static void scheduleAsync(Plugin plugin, GUI gui, Consumer<GUI> update) {
         if (plugin == null || gui == null || update == null) return;
 
@@ -135,9 +121,6 @@ public class GUIUpdater {
         });
     }
 
-    /**
-     * Pause/Resume updates
-     */
     public static void pauseUpdates(GUI gui) {
         GUIUpdateConfig config = configs.get(gui);
         if (config != null) {
@@ -159,9 +142,6 @@ public class GUIUpdater {
         return config != null && config.isPaused();
     }
 
-    /**
-     * Update period modification
-     */
     public static void changePeriod(Plugin plugin, GUI gui, long newPeriod, Consumer<GUI> update) {
         GUIUpdateConfig oldConfig = configs.get(gui);
         if (oldConfig != null) {
@@ -177,9 +157,6 @@ public class GUIUpdater {
         }
     }
 
-    /**
-     * Conditional updates
-     */
     public static void scheduleConditional(Plugin plugin, GUI gui, long period, 
                                          java.util.function.Predicate<GUI> condition, 
                                          Consumer<GUI> update) {
@@ -190,9 +167,6 @@ public class GUIUpdater {
         });
     }
 
-    /**
-     * Batch updates for multiple GUIs
-     */
     public static void scheduleMultiple(Plugin plugin, long period, Consumer<GUI> update, GUI... guis) {
         for (GUI gui : guis) {
             scheduleRepeating(plugin, gui, period, update);
@@ -205,9 +179,6 @@ public class GUIUpdater {
         }
     }
 
-    /**
-     * Enhanced cancel with cleanup
-     */
     public static void cancel(GUI gui) {
         BukkitTask task = tasks.remove(gui);
         if (task != null) {
@@ -226,9 +197,6 @@ public class GUIUpdater {
         configs.clear();
     }
 
-    /**
-     * Status and monitoring
-     */
     public static boolean isScheduled(GUI gui) {
         return tasks.containsKey(gui);
     }
@@ -251,9 +219,6 @@ public class GUIUpdater {
         return lastUpdate > 0 ? System.currentTimeMillis() - lastUpdate : -1;
     }
 
-    /**
-     * Debug and logging
-     */
     public static void setDebugMode(boolean debug) {
         debugMode = debug;
         logDebug("Debug mode " + (debug ? "enabled" : "disabled"));
@@ -272,8 +237,6 @@ public class GUIUpdater {
         }
         System.out.println("========================");
     }
-
-    // **PRIVATE HELPER METHODS**
 
     private static void runUpdateSync(GUI gui, Consumer<GUI> update, GUIUpdateConfig config) {
         update.accept(gui);

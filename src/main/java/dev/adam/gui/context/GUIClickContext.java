@@ -18,7 +18,6 @@ public class GUIClickContext {
         this.event = event;
     }
 
-    // **EXISTING METHODS**
     public Player getPlayer() {
         return (Player) event.getWhoClicked();
     }
@@ -67,11 +66,6 @@ public class GUIClickContext {
         return event;
     }
 
-    // **NEW ADVANCED METHODS**
-    
-    /**
-     * Enhanced click type detection
-     */
     public ClickType getClickType() {
         return event.getClick();
     }
@@ -108,9 +102,6 @@ public class GUIClickContext {
         return event.getClick().name().contains("CONTROL");
     }
 
-    /**
-     * Sound and effects
-     */
     public void playSound(Sound sound) {
         playSound(sound, 1.0f, 1.0f);
     }
@@ -131,9 +122,6 @@ public class GUIClickContext {
         playSound(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.7f, 1.2f);
     }
 
-    /**
-     * Message utilities
-     */
     public void sendColoredMessage(String msg) {
         getPlayer().sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&', msg));
     }
@@ -154,9 +142,6 @@ public class GUIClickContext {
         );
     }
 
-    /**
-     * Inventory utilities
-     */
     public Inventory getInventory() {
         return event.getInventory();
     }
@@ -183,9 +168,6 @@ public class GUIClickContext {
         event.setCurrentItem(item);
     }
 
-    /**
-     * Delayed actions
-     */
     public void runLater(Plugin plugin, Runnable task, long delayTicks) {
         new BukkitRunnable() {
             @Override
@@ -204,9 +186,6 @@ public class GUIClickContext {
         }.runTaskAsynchronously(plugin);
     }
 
-    /**
-     * Permission checks
-     */
     public boolean hasPermission(String permission) {
         return getPlayer().hasPermission(permission);
     }
@@ -224,9 +203,6 @@ public class GUIClickContext {
         return true;
     }
 
-    /**
-     * Event consumption (prevent further processing)
-     */
     public void consume() {
         this.consumed = true;
         cancel();
@@ -236,9 +212,6 @@ public class GUIClickContext {
         return consumed;
     }
 
-    /**
-     * Player utilities
-     */
     public void giveItem(ItemStack item) {
         if (getPlayer().getInventory().firstEmpty() != -1) {
             getPlayer().getInventory().addItem(item);
@@ -266,25 +239,6 @@ public class GUIClickContext {
         return total;
     }
 
-    /**
-     * Economy integration (requires Vault)
-     */
-    public boolean hasMoney(double amount) {
-        // This would require Vault integration
-        return true; // Placeholder
-    }
-    
-    public void takeMoney(double amount) {
-        // This would require Vault integration
-    }
-    
-    public void giveMoney(double amount) {
-        // This would require Vault integration
-    }
-
-    /**
-     * Quick response methods
-     */
     public void success(String message) {
         sendColoredMessage("&a✓ " + message);
         playSuccessSound();
@@ -305,9 +259,6 @@ public class GUIClickContext {
         playSound(Sound.BLOCK_NOTE_BLOCK_BASS, 0.8f, 0.8f);
     }
 
-    /**
-     * Debug information
-     */
     public void debug() {
         if (getPlayer().isOp()) {
             sendMessage("§7[DEBUG] Slot: " + getSlot() + 

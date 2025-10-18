@@ -17,19 +17,16 @@ public class GUIBuilder implements GUIBase {
     private final List<BuildStep> buildSteps = new ArrayList<>();
     private final Set<String> appliedTemplates = new HashSet<>();
     
-    // Builder configuration
     private boolean validateItems = true;
     private boolean autoFillBackground = false;
     private ItemStack defaultBackground;
     private String builderName = "UnnamedGUI";
 
-    // Build step interface for complex building
     @FunctionalInterface
     public interface BuildStep {
         void apply(GUIBuilder builder);
     }
-
-    // Template system
+    
     public static class GUITemplate {
         private final String name;
         private final Map<Integer, ItemStack> items = new HashMap<>();
@@ -70,8 +67,6 @@ public class GUIBuilder implements GUIBase {
         this.defaultBackground = GUI.createItem(Material.GRAY_STAINED_GLASS_PANE, " ");
     }
 
-    // **ENHANCED EXISTING METHODS**
-
     public GUIBuilder setItem(int slot, ItemStack item, Consumer<GUIClickContext> handler) {
         return setItem(slot, item, null, handler);
     }
@@ -89,11 +84,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    // **NEW ADVANCED BUILDER METHODS**
-
-    /**
-     * Conditional building
-     */
     public GUIBuilder setItemIf(boolean condition, int slot, ItemStack item, Consumer<GUIClickContext> handler) {
         if (condition) {
             setItem(slot, item, handler);
@@ -108,9 +98,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Named handlers for reusability
-     */
     public GUIBuilder registerHandler(String name, Consumer<GUIClickContext> handler) {
         namedHandlers.put(name, handler);
         return this;
@@ -124,9 +111,6 @@ public class GUIBuilder implements GUIBase {
         return setItem(slot, item, handler);
     }
 
-    /**
-     * Bulk operations with lambdas
-     */
     public GUIBuilder setItems(int[] slots, ItemStack item, Consumer<GUIClickContext> handler) {
         for (int slot : slots) {
             setItem(slot, item, handler);
@@ -142,9 +126,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Pattern-based building
-     */
     public GUIBuilder applyPattern(String[] pattern, Map<Character, ItemStack> items, Map<Character, Consumer<GUIClickContext>> handlers) {
         int slot = 0;
         for (String row : pattern) {
@@ -165,15 +146,11 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Template system
-     */
     public GUIBuilder applyTemplate(GUITemplate template) {
         if (appliedTemplates.contains(template.getName())) {
-            return this; // Already applied
+            return this;
         }
         
-        // Apply items and handlers
         for (Map.Entry<Integer, ItemStack> entry : template.getItems().entrySet()) {
             int slot = entry.getKey();
             ItemStack item = entry.getValue();
@@ -181,12 +158,10 @@ public class GUIBuilder implements GUIBase {
             setItem(slot, item, handler);
         }
         
-        // Apply properties
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet()) {
             gui.setProperty(entry.getKey(), entry.getValue());
         }
         
-        // Post-apply actions
         if (template.getPostApply() != null) {
             template.getPostApply().accept(this);
         }
@@ -195,9 +170,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Build steps for complex logic
-     */
     public GUIBuilder addBuildStep(BuildStep step) {
         buildSteps.add(step);
         return this;
@@ -211,9 +183,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Layout helpers
-     */
     public GUIBuilder fillArea(int topLeft, int bottomRight, ItemStack item, Consumer<GUIClickContext> handler) {
         int startRow = topLeft / 9;
         int startCol = topLeft % 9;
@@ -263,9 +232,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Advanced fill methods
-     */
     public GUIBuilder fillCheckered(ItemStack item1, ItemStack item2, Consumer<GUIClickContext> handler1, Consumer<GUIClickContext> handler2) {
         for (int slot = 0; slot < gui.getSlotCount(); slot++) {
             int row = slot / 9;
@@ -281,25 +247,21 @@ public class GUIBuilder implements GUIBase {
     }
 
     public GUIBuilder fillSpiral(ItemStack item, Consumer<GUIClickContext> handler) {
-        // Spiral filling algorithm
         int rows = gui.getRows();
         int cols = 9;
         int top = 0, bottom = rows - 1, left = 0, right = cols - 1;
         
         while (top <= bottom && left <= right) {
-            // Fill top row
             for (int col = left; col <= right; col++) {
                 setItem(top * 9 + col, item, handler);
             }
             top++;
             
-            // Fill right column
             for (int row = top; row <= bottom; row++) {
                 setItem(row * 9 + right, item, handler);
             }
             right--;
             
-            // Fill bottom row
             if (top <= bottom) {
                 for (int col = right; col >= left; col--) {
                     setItem(bottom * 9 + col, item, handler);
@@ -307,7 +269,6 @@ public class GUIBuilder implements GUIBase {
                 bottom--;
             }
             
-            // Fill left column
             if (left <= right) {
                 for (int row = bottom; row >= top; row--) {
                     setItem(row * 9 + left, item, handler);
@@ -318,9 +279,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Configuration methods
-     */
     public GUIBuilder setValidateItems(boolean validate) {
         this.validateItems = validate;
         return this;
@@ -341,9 +299,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * GUI configuration delegation
-     */
     public GUIBuilder setOpenCondition(Predicate<Player> condition) {
         gui.setOpenCondition(condition);
         return this;
@@ -369,9 +324,6 @@ public class GUIBuilder implements GUIBase {
         return this;
     }
 
-    /**
-     * Property management
-     */
     public GUIBuilder setProperty(String key, Object value) {
         gui.setProperty(key, value);
         return this;
@@ -381,9 +333,6 @@ public class GUIBuilder implements GUIBase {
         return gui.getProperty(key, type);
     }
 
-    /**
-     * Quick item creation
-     */
     public GUIBuilder quickItem(int slot, Material material, String name, Consumer<GUIClickContext> handler, String... lore) {
         ItemStack item = GUI.createItem(material, name, lore);
         return setItem(slot, item, handler);
@@ -400,9 +349,6 @@ public class GUIBuilder implements GUIBase {
         return quickButton(slot, material, name, () -> {}, lore);
     }
 
-    /**
-     * Validation and debugging
-     */
     public boolean validate() {
         if (!validateItems) return true;
 
@@ -431,8 +377,6 @@ public class GUIBuilder implements GUIBase {
         System.out.println("Properties: " + (gui.hasProperty("debug") ? "Has debug properties" : "No debug properties"));
         System.out.println("=====================================");
     }
-
-    // **EXISTING METHODS** (keeping for compatibility)
     
     public GUIBuilder fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> onClick) {
         gui.fillRowIfEmpty(row, item, onClick);
@@ -512,8 +456,8 @@ public class GUIBuilder implements GUIBase {
         if (autoFillBackground) {
             gui.setBackground(defaultBackground, null);
         }
-        executeBuildSteps(); // Execute any pending build steps
-        validate(); // Final validation
+        executeBuildSteps();
+        validate(); 
         gui.open(player);
     }
 
@@ -525,8 +469,6 @@ public class GUIBuilder implements GUIBase {
         validate();
         return gui;
     }
-
-    // **TEMPLATE FACTORY METHODS**
     
     public static GUITemplate createBasicTemplate() {
         return new GUITemplate("basic")
@@ -537,7 +479,6 @@ public class GUIBuilder implements GUIBase {
     public static GUITemplate createNavigationTemplate() {
         GUITemplate template = new GUITemplate("navigation");
         
-        // Add navigation items
         template.setItem(45, GUI.createItem(Material.ARROW, "&cPrevious Page"), ctx -> {
             ctx.sendMessage("Previous page clicked!");
         });
@@ -552,8 +493,6 @@ public class GUIBuilder implements GUIBase {
         
         return template;
     }
-
-    // **DELEGATE METHODS**
 
     @Override
     public Inventory getInventory() {
@@ -570,7 +509,6 @@ public class GUIBuilder implements GUIBase {
         int slot = event.getSlot();
         Player player = (Player) event.getWhoClicked();
         
-        // Check permissions
         if (slotPermissions.containsKey(slot) && !player.hasPermission(slotPermissions.get(slot))) {
             player.sendMessage("§cYou don't have permission to use this button.");
             return;
@@ -583,8 +521,6 @@ public class GUIBuilder implements GUIBase {
     public void handleClose(org.bukkit.event.inventory.InventoryCloseEvent event) {
         gui.handleClose(event);
     }
-
-    // **GETTERS**
     
     public String getBuilderName() { return builderName; }
     public boolean isValidateItems() { return validateItems; }

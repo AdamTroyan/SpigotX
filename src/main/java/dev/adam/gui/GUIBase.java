@@ -11,53 +11,34 @@ import org.bukkit.inventory.ItemStack;
 import java.util.*;
 
 public interface GUIBase extends InventoryHolder {
-
-    // **EXISTING METHODS**
     default boolean hasHandler(int slot) { return false; }
     default void handleClick(InventoryClickEvent event) {}
     default void handleClose(InventoryCloseEvent event) {}
     @Override
     Inventory getInventory();
 
-    // **NEW ADVANCED METHODS**
-
-    /**
-     * Enhanced event handling
-     */
     default void handleOpen(InventoryOpenEvent event) {
-        // Default implementation - can be overridden
         Player player = (Player) event.getPlayer();
         onGUIOpen(player);
     }
 
     default void handleDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
-        // Default: cancel all drag events in custom GUIs
         event.setCancelled(true);
     }
 
     default void handleMove(org.bukkit.event.inventory.InventoryMoveItemEvent event) {
-        // Default: cancel all move events in custom GUIs
         event.setCancelled(true);
     }
 
-    /**
-     * Lifecycle hooks
-     */
     default void onGUIOpen(Player player) {
-        // Called when GUI is opened
     }
 
     default void onGUIClose(Player player) {
-        // Called when GUI is closed
     }
 
     default void onPlayerDisconnect(Player player) {
-        // Called when player disconnects while GUI is open
     }
 
-    /**
-     * Validation methods
-     */
     default boolean canPlayerOpen(Player player) {
         return player != null && player.isOnline();
     }
@@ -70,9 +51,6 @@ public interface GUIBase extends InventoryHolder {
         return slot >= 0 && slot < getInventory().getSize();
     }
 
-    /**
-     * Utility methods
-     */
     default int getSize() {
         return getInventory().getSize();
     }
@@ -104,9 +82,6 @@ public interface GUIBase extends InventoryHolder {
         return getViewers().contains(player);
     }
 
-    /**
-     * Item management
-     */
     default ItemStack getItem(int slot) {
         if (!isValidSlot(slot)) return null;
         return getInventory().getItem(slot);
@@ -163,9 +138,6 @@ public interface GUIBase extends InventoryHolder {
         return getFilledSlotCount() == 0;
     }
 
-    /**
-     * Coordinate system (row/column)
-     */
     default int slotToRow(int slot) {
         return slot / 9;
     }
@@ -193,9 +165,6 @@ public interface GUIBase extends InventoryHolder {
         }
     }
 
-    /**
-     * Border detection
-     */
     default boolean isBorderSlot(int slot) {
         if (!isValidSlot(slot)) return false;
         
@@ -220,16 +189,12 @@ public interface GUIBase extends InventoryHolder {
         int row = slotToRow(slot);
         int col = slotToColumn(slot);
         int centerRow = getRows() / 2;
-        int centerCol = 4; // Middle column
+        int centerCol = 4;
         
         return row == centerRow && col == centerCol;
     }
 
-    /**
-     * Refresh and update methods
-     */
     default void refresh() {
-        // Default implementation - can be overridden for custom refresh logic
         for (Player viewer : getViewers()) {
             viewer.updateInventory();
         }
@@ -251,9 +216,6 @@ public interface GUIBase extends InventoryHolder {
         }
     }
 
-    /**
-     * Search and find methods
-     */
     default List<Integer> findSlots(org.bukkit.Material material) {
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < getSize(); i++) {
@@ -290,9 +252,6 @@ public interface GUIBase extends InventoryHolder {
         return count;
     }
 
-    /**
-     * Pattern matching
-     */
     default boolean matchesPattern(int startSlot, org.bukkit.Material[][] pattern) {
         int startRow = slotToRow(startSlot);
         int startCol = slotToColumn(startSlot);
@@ -317,9 +276,6 @@ public interface GUIBase extends InventoryHolder {
         return true;
     }
 
-    /**
-     * Bulk operations
-     */
     default void clearAll() {
         for (int i = 0; i < getSize(); i++) {
             removeItem(i);
@@ -341,13 +297,9 @@ public interface GUIBase extends InventoryHolder {
     }
 
     default GUIBase createCopy() {
-        // This would need to be implemented by concrete classes
         throw new UnsupportedOperationException("Copy operation not supported for this GUI type");
     }
 
-    /**
-     * Statistics and monitoring
-     */
     default Map<org.bukkit.Material, Integer> getItemStatistics() {
         Map<org.bukkit.Material, Integer> stats = new HashMap<>();
         for (int i = 0; i < getSize(); i++) {
@@ -377,9 +329,6 @@ public interface GUIBase extends InventoryHolder {
         System.out.println("===================");
     }
 
-    /**
-     * Event utilities
-     */
     default void broadcastToViewers(String message) {
         for (Player viewer : getViewers()) {
             viewer.sendMessage(message);
@@ -412,11 +361,7 @@ public interface GUIBase extends InventoryHolder {
         }
     }
 
-    /**
-     * Debugging and validation
-     */
     default boolean validate() {
-        // Basic validation - can be overridden
         if (getInventory() == null) {
             System.err.println("GUI validation failed: inventory is null");
             return false;
@@ -444,9 +389,6 @@ public interface GUIBase extends InventoryHolder {
         System.out.println("===================");
     }
 
-    /**
-     * Type checking utilities
-     */
     default boolean isGUI() {
         return this instanceof GUI;
     }
@@ -459,9 +401,6 @@ public interface GUIBase extends InventoryHolder {
         return this instanceof GUIBuilder;
     }
 
-    /**
-     * Safe casting methods
-     */
     default Optional<GUI> asGUI() {
         return this instanceof GUI ? Optional.of((GUI) this) : Optional.empty();
     }
@@ -474,9 +413,6 @@ public interface GUIBase extends InventoryHolder {
         return this instanceof GUIBuilder ? Optional.of((GUIBuilder) this) : Optional.empty();
     }
 
-    /**
-     * Fluent interface helpers
-     */
     default GUIBase then(java.util.function.Consumer<GUIBase> action) {
         action.accept(this);
         return this;

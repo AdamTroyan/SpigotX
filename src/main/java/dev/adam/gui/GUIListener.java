@@ -34,7 +34,6 @@ public class GUIListener implements Listener {
         }
     }
 
-    // **CONFIGURATION METHODS**
     public static void setClickCooldown(long cooldownMs) {
         clickCooldown = cooldownMs;
         logDebug("Click cooldown set to: " + cooldownMs + "ms");
@@ -50,7 +49,6 @@ public class GUIListener implements Listener {
         logDebug("Debug mode " + (debug ? "enabled" : "disabled"));
     }
 
-    // **UTILITY METHODS**
     private boolean isOurGui(Inventory inv) {
         return inv != null && inv.getHolder() instanceof GUIBase;
     }
@@ -59,14 +57,12 @@ public class GUIListener implements Listener {
         UUID uuid = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
         
-        // Check cooldown
         Long lastClick = lastClickTime.get(uuid);
         if (lastClick != null && (currentTime - lastClick) < clickCooldown) {
             logDebug("Click blocked for " + player.getName() + " - cooldown not expired");
             return false;
         }
 
-        // Check clicks per second
         Integer clicks = clickCounts.get(uuid);
         if (clicks == null) clicks = 0;
         
@@ -75,11 +71,9 @@ public class GUIListener implements Listener {
             return false;
         }
 
-        // Update tracking
         lastClickTime.put(uuid, currentTime);
         clickCounts.put(uuid, clicks + 1);
         
-        // Reset click count after 1 second
         SpigotX.getPlugin().getServer().getScheduler().runTaskLater(
             SpigotX.getPlugin(), 
             () -> clickCounts.put(uuid, Math.max(0, clickCounts.getOrDefault(uuid, 0) - 1)), 
@@ -89,21 +83,17 @@ public class GUIListener implements Listener {
         return true;
     }
 
-    // **EVENT HANDLERS**
-
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!isOurGui(event.getInventory())) return;
         
         Player player = (Player) event.getWhoClicked();
         
-        // Anti-spam protection
         if (!isClickAllowed(player)) {
             event.setCancelled(true);
             return;
         }
 
-        // Always cancel by default for our GUIs
         event.setCancelled(true);
 
         if (event.getClickedInventory() == null) {
@@ -119,7 +109,6 @@ public class GUIListener implements Listener {
         int rawSlot = event.getRawSlot();
         GUIBase gui = (GUIBase) event.getInventory().getHolder();
         
-        // Track GUI usage
         lastGUITypes.put(player.getUniqueId(), gui.getClass().getSimpleName());
         
         logDebug("Processing click for " + player.getName() + 
@@ -170,7 +159,6 @@ public class GUIListener implements Listener {
         try {
             gui.handleClose(event);
             
-            // Clean up tracking data
             UUID uuid = player.getUniqueId();
             lastClickTime.remove(uuid);
             clickCounts.remove(uuid);
@@ -183,8 +171,6 @@ public class GUIListener implements Listener {
         }
     }
 
-    // **NEW EVENT HANDLERS**
-
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!isOurGui(event.getInventory())) return;
@@ -195,10 +181,8 @@ public class GUIListener implements Listener {
         logDebug("GUI opened: " + gui.getClass().getSimpleName() + 
                 " by " + player.getName());
         
-        // Track GUI type for this player
         lastGUITypes.put(player.getUniqueId(), gui.getClass().getSimpleName());
         
-        // Reset click tracking for new GUI
         UUID uuid = player.getUniqueId();
         lastClickTime.remove(uuid);
         clickCounts.remove(uuid);
@@ -208,20 +192,16 @@ public class GUIListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         
-        // Clean up all tracking data
         lastClickTime.remove(uuid);
         clickCounts.remove(uuid);
         lastGUITypes.remove(uuid);
         
-        // Cancel any GUI updates for this player
-        // This would require access to GUIUpdater's active tasks
         logDebug("Cleaned up data for disconnected player: " + event.getPlayer().getName());
     }
 
     @EventHandler
     public void onPluginDisable(PluginDisableEvent event) {
         if (event.getPlugin().equals(SpigotX.getPlugin())) {
-            // Clean up everything
             lastClickTime.clear();
             clickCounts.clear();
             lastGUITypes.clear();
@@ -230,8 +210,6 @@ public class GUIListener implements Listener {
             logDebug("Plugin disabled - cleaned up all GUI data");
         }
     }
-
-    // **INVENTORY TYPE SPECIFIC HANDLING**
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryCreative(InventoryCreativeEvent event) {
@@ -248,8 +226,6 @@ public class GUIListener implements Listener {
             logDebug("Blocked interact event for " + event.getWhoClicked().getName());
         }
     }
-
-    // **STATISTICS AND MONITORING**
 
     public static Map<String, Integer> getClickStatistics() {
         Map<String, Integer> stats = new HashMap<>();
@@ -281,8 +257,6 @@ public class GUIListener implements Listener {
         lastGUITypes.clear();
         logDebug("Cleared all tracking data");
     }
-
-    // **UTILITY METHODS**
 
     private static void logDebug(String message) {
         if (debugMode) {

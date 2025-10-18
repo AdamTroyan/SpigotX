@@ -25,12 +25,10 @@ public class GUI implements GUIBase {
     private final Set<Integer> protectedSlots = new HashSet<>();
     private final Map<String, Object> properties = new ConcurrentHashMap<>();
     
-    // Event handlers
     private Consumer<Player> onOpen, onClose;
     private Consumer<GUIClickContext> globalClickHandler;
     private Predicate<Player> openCondition;
     
-    // Advanced features
     private boolean autoRefresh = false;
     private long refreshInterval = 20L; // ticks
     private boolean allowPlayerInventoryClick = false;
@@ -39,7 +37,6 @@ public class GUI implements GUIBase {
     private final Map<Integer, Long> slotCooldowns = new HashMap<>();
     private final Map<Integer, String> slotTooltips = new HashMap<>();
     
-    // Animation support
     private final Map<Integer, ItemStack[]> animations = new HashMap<>();
     private final Map<Integer, Integer> animationFrames = new HashMap<>();
     private final Map<Integer, Long> animationSpeeds = new HashMap<>();
@@ -49,15 +46,12 @@ public class GUI implements GUIBase {
         this.rows = rows;
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
         
-        // Set default background
         this.backgroundItem = createDefaultBackground();
     }
 
-    // **EXISTING METHODS** (enhanced)
     public void setItem(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
         if (slot < 0 || slot >= inventory.getSize()) return;
         
-        // Store original item for reset purposes
         if (item != null) {
             originalItems.put(slot, item.clone());
         }
@@ -81,11 +75,6 @@ public class GUI implements GUIBase {
         slotTooltips.remove(slot);
     }
 
-    // **NEW ADVANCED METHODS**
-
-    /**
-     * Enhanced item setting with permissions and cooldowns
-     */
     public void setItem(int slot, ItemStack item, String permission, long cooldownMs, Consumer<GUIClickContext> onClick) {
         setItem(slot, item, onClick);
         if (permission != null && !permission.isEmpty()) {
@@ -96,9 +85,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Set item with tooltip
-     */
     public void setItemWithTooltip(int slot, ItemStack item, String tooltip, Consumer<GUIClickContext> onClick) {
         setItem(slot, item, onClick);
         if (tooltip != null) {
@@ -106,9 +92,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Protected slots (cannot be changed)
-     */
     public void setProtectedItem(int slot, ItemStack item, Consumer<GUIClickContext> onClick) {
         setItem(slot, item, onClick);
         protectedSlots.add(slot);
@@ -126,9 +109,6 @@ public class GUI implements GUIBase {
         return protectedSlots.contains(slot);
     }
 
-    /**
-     * Animation system
-     */
     public void setAnimatedItem(int slot, ItemStack[] frames, long speedTicks, Consumer<GUIClickContext> onClick) {
         if (frames == null || frames.length == 0) return;
         
@@ -157,9 +137,6 @@ public class GUI implements GUIBase {
         animationSpeeds.remove(slot);
     }
 
-    /**
-     * Bulk operations
-     */
     public void setItems(Map<Integer, ItemStack> items, Consumer<GUIClickContext> onClick) {
         for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
             setItem(entry.getKey(), entry.getValue(), onClick);
@@ -173,9 +150,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Pattern-based item placement
-     */
     public void setPattern(String[] pattern, Map<Character, ItemStack> mapping, Map<Character, Consumer<GUIClickContext>> handlers) {
         int slot = 0;
         for (String row : pattern) {
@@ -195,9 +169,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Advanced fill methods
-     */
     public void fillArea(int startSlot, int endSlot, ItemStack item, Consumer<GUIClickContext> onClick) {
         for (int i = startSlot; i <= endSlot && i < inventory.getSize(); i++) {
             setItem(i, item, onClick);
@@ -235,9 +206,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Conditional methods
-     */
     public void setItemIf(int slot, ItemStack item, Predicate<GUI> condition, Consumer<GUIClickContext> onClick) {
         if (condition.test(this)) {
             setItem(slot, item, onClick);
@@ -254,9 +222,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Item manipulation
-     */
     public void swapItems(int slot1, int slot2) {
         ItemStack item1 = inventory.getItem(slot1);
         ItemStack item2 = inventory.getItem(slot2);
@@ -280,9 +245,6 @@ public class GUI implements GUIBase {
         return item != null ? item.clone() : null;
     }
 
-    /**
-     * Search and find
-     */
     public List<Integer> findItems(Material material) {
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < inventory.getSize(); i++) {
@@ -315,9 +277,6 @@ public class GUI implements GUIBase {
         return -1;
     }
 
-    /**
-     * Properties system
-     */
     public void setProperty(String key, Object value) {
         properties.put(key, value);
     }
@@ -343,9 +302,6 @@ public class GUI implements GUIBase {
         return properties.containsKey(key);
     }
 
-    /**
-     * Reset and restore
-     */
     public void resetSlot(int slot) {
         ItemStack original = originalItems.get(slot);
         if (original != null) {
@@ -365,9 +321,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Advanced configuration
-     */
     public void setOpenCondition(Predicate<Player> condition) {
         this.openCondition = condition;
     }
@@ -391,7 +344,6 @@ public class GUI implements GUIBase {
 
     public void setBackgroundItem(ItemStack item) {
         this.backgroundItem = item;
-        // Apply to empty slots
         for (int i = 0; i < inventory.getSize(); i++) {
             if (inventory.getItem(i) == null) {
                 inventory.setItem(i, item);
@@ -399,9 +351,6 @@ public class GUI implements GUIBase {
         }
     }
 
-    /**
-     * Utility methods
-     */
     public int getSlotCount() {
         return rows * 9;
     }
@@ -428,9 +377,6 @@ public class GUI implements GUIBase {
         return getFilledSlotCount() == 0;
     }
 
-    /**
-     * Create default items
-     */
     private ItemStack createDefaultBackground() {
         ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = item.getItemMeta();
@@ -460,8 +406,6 @@ public class GUI implements GUIBase {
         return item;
     }
 
-    // **ENHANCED EVENT HANDLING**
-
     @Override
     public void handleClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
@@ -470,26 +414,22 @@ public class GUI implements GUIBase {
         int slot = event.getRawSlot();
         GUIClickContext context = new GUIClickContext(event);
         
-        // Check permissions
         String permission = slotPermissions.get(slot);
         if (permission != null && !player.hasPermission(permission)) {
             context.error("You don't have permission to use this!");
             return;
         }
         
-        // Check cooldowns
         Long cooldown = slotCooldowns.get(slot);
         if (cooldown != null) {
-            // Implementation would require a cooldown tracking system
+            
         }
         
-        // Show tooltip if exists
         String tooltip = slotTooltips.get(slot);
         if (tooltip != null) {
             context.sendActionBar(tooltip);
         }
         
-        // Call global handler first
         if (globalClickHandler != null) {
             try {
                 globalClickHandler.accept(context);
@@ -499,7 +439,6 @@ public class GUI implements GUIBase {
             }
         }
         
-        // Call specific handler
         Consumer<GUIClickContext> handler = clickHandlers.get(slot);
         if (handler != null) {
             event.setCancelled(true);
@@ -519,13 +458,11 @@ public class GUI implements GUIBase {
             try {
                 onClose.accept(player);
                 
-                // Play close sound
                 if (closeSound != null) {
                     try {
                         org.bukkit.Sound sound = org.bukkit.Sound.valueOf(closeSound);
                         player.playSound(player.getLocation(), sound, 0.5f, 1.0f);
                     } catch (IllegalArgumentException ignored) {
-                        // Invalid sound name
                     }
                 }
             } catch (Exception e) {
@@ -537,7 +474,6 @@ public class GUI implements GUIBase {
     public void open(Player player) {
         if (player == null) return;
         
-        // Check open condition
         if (openCondition != null && !openCondition.test(player)) {
             player.sendMessage("§cYou cannot open this GUI right now!");
             return;
@@ -552,8 +488,6 @@ public class GUI implements GUIBase {
             }
         }
     }
-
-    // **GETTERS AND SETTERS**
     
     public String getTitle() { return title; }
     public int getRows() { return rows; }
@@ -583,9 +517,7 @@ public class GUI implements GUIBase {
     public void removeHandler(int slot) {
         clickHandlers.remove(slot);
     }
-    
-    // **EXISTING METHODS** (keeping them for compatibility)
-    
+        
     public void fillBorder(ItemStack item, Consumer<GUIClickContext> onClick) {
         int size = rows * 9;
         for (int i = 0; i < size; i++) {
