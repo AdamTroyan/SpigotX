@@ -1,26 +1,42 @@
-# SpigotX – The Ultimate Spigot Plugin Development Toolkit 🚀
+# SpigotX 🚀
 
-[![](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)  
-[JavaDoc Reference](https://adamtroyan.github.io/SpigotX-Javadoc/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://www.oracle.com/java/)
+[![Spigot](https://img.shields.io/badge/Spigot-1.8%2B-brightgreen.svg)](https://www.spigotmc.org/)
+[![JitPack](https://jitpack.io/v/AdamTroyan/SpigotX.svg)](https://jitpack.io/#AdamTroyan/SpigotX)
 
----
+> A modern, lightweight utility library for Spigot plugin development that eliminates boilerplate code and provides elegant builder patterns for commands, GUIs, and events.
 
-> **Why SpigotX?**  
-> SpigotX is a modern, modular, and developer-friendly framework that empowers you to build robust, maintainable, and beautiful Minecraft plugins with minimal boilerplate and maximum power.  
-> Whether you’re a beginner or a seasoned developer, SpigotX will make you fall in love with plugin development.
+## 🌟 Why SpigotX?
 
----
+SpigotX transforms complex Spigot plugin development into simple, readable code:
 
-## 📦 Effortless Installation
+```java
+// Before SpigotX - Traditional Spigot
+public class MyCommand implements CommandExecutor {
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Only players can use this command!");
+            return true;
+        }
+        // 20+ lines of boilerplate code...
+    }
+}
 
-SpigotX is distributed via [JitPack](https://jitpack.io/).  
-**You must add JitPack as a repository** in your build system.
+// After SpigotX - Clean and Simple
+SpigotX.registerCommand("heal", (sender, args) -> {
+    if (sender instanceof Player) {
+        ((Player) sender).setHealth(20);
+        sender.sendMessage("§aYou have been healed!");
+    }
+    return true;
+});
+```
 
-<details>
-<summary><b>Show Maven & Gradle Setup</b></summary>
+## 📦 Installation
 
 ### Maven
-
 ```xml
 <repositories>
     <repository>
@@ -28,403 +44,333 @@ SpigotX is distributed via [JitPack](https://jitpack.io/).
         <url>https://jitpack.io</url>
     </repository>
 </repositories>
-<dependency>
-    <groupId>com.github.AdamTroyan</groupId>
-    <artifactId>SpigotX</artifactId>
-    <version>v1.4.3</version>
-</dependency>
+
+<dependencies>
+    <dependency>
+        <groupId>com.github.AdamTroyan</groupId>
+        <artifactId>SpigotX</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+</dependencies>
 ```
 
-### Gradle (Groovy DSL)
-
+### Gradle
 ```groovy
 repositories {
-    mavenCentral()
     maven { url 'https://jitpack.io' }
 }
+
 dependencies {
-    implementation 'com.github.AdamTroyan:SpigotX:v1.4.3'
+    implementation 'com.github.AdamTroyan:SpigotX:1.0.0'
 }
 ```
 
-### Gradle (Kotlin DSL)
-
-```kotlin
-repositories {
-    mavenCentral()
-    maven("https://jitpack.io")
-}
-dependencies {
-    implementation("com.github.AdamTroyan:SpigotX:v1.4.3")
-}
-```
-</details>
-
-> **Tip:** Always use the latest [release from JitPack](https://jitpack.io/#AdamTroyan/SpigotX) for bugfixes and new features.
-
----
-
-## 🏁 Your First Plugin – Step by Step
-
-### 1. Main Plugin Class
+## 🚀 Quick Start
 
 ```java
-package com.example;
-
-import dev.adam.SpigotX;
-import org.bukkit.plugin.java.JavaPlugin;
-
 public class MyPlugin extends JavaPlugin {
+    
     @Override
     public void onEnable() {
-        // 1. Initialize SpigotX
-        SpigotX.init(this);
-
-        // 2. Register commands (choose your favorite way!)
-        new dev.adam.commands.CommandBuilder()
-            .name("hello")
-            .description("Say hello")
-            .executor((sender, args) -> sender.sendMessage("Hello from CommandBuilder!"))
-            .register();
-
-        // 3. Register annotation-based commands
-        SpigotX.registerCommand(new MyCommands());
-
-        // 4. Register events
-        SpigotX.on(org.bukkit.event.player.PlayerJoinEvent.class, ctx -> {
-            ctx.getPlayer().sendMessage("Welcome with SpigotX.on!");
+        // Initialize SpigotX
+        SpigotX.initialize(this);
+        
+        // Create a command in one line
+        SpigotX.registerCommand("hello", (sender, args) -> {
+            sender.sendMessage("§aHello from SpigotX!");
+            return true;
         });
+        
+        // Create a GUI with builder pattern
+        GUI gui = GUIBuilder.create()
+            .title("§6My GUI")
+            .size(27)
+            .item(13, new ItemStack(Material.DIAMOND))
+            .build();
     }
 }
 ```
 
----
+## ✨ Core Features
 
-## 🏷️ Annotation-Based Commands
+### 🎯 **Command System**
+Three flexible ways to create commands:
+- **Builder Pattern** - Fluent API for simple commands
+- **Annotations** - Class-based organization for complex plugins
+- **Direct Registration** - Lambda-style for quick prototyping
 
-SpigotX supports annotation-based commands for maximum simplicity and power.  
-Just annotate your methods and register the class instance:
+### 🖼️ **GUI Framework**
+- **Easy Creation** - Builder pattern for inventory GUIs
+- **Pagination** - Built-in support for multi-page inventories
+- **Auto-Updates** - Dynamic content with automatic refresh
+- **Event Handling** - Simple click handlers and validators
+
+### ⚡ **Event Management**
+- **Fluent API** - Chain conditions and handlers elegantly
+- **Async Support** - Built-in async event processing
+- **Lambda Support** - Modern Java 8+ syntax
+- **Conditional Logic** - Easy event filtering
+
+### 🔧 **Utilities**
+- **Validation** - Input validation with readable error messages
+- **Reflection** - Safe reflection utilities for version compatibility
+- **Item Builders** - Fluent API for ItemStack creation
+
+## 📚 Usage Examples
+
+### Commands with Builder Pattern
 
 ```java
-package com.example;
-
-import dev.adam.commands.annotations.Command;
-import dev.adam.commands.annotations.AsyncCommand;
-import dev.adam.commands.annotations.TabComplete;
-import dev.adam.commands.TabHandler;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import java.util.List;
-
-public class MyCommands {
-    // Registers /hello
-    @Command(name = "hello", description = "Say hello to the player")
-    public void hello(CommandSender sender, String[] args) {
-        sender.sendMessage("👋 Hello, " + sender.getName() + "! Welcome to the server.");
-    }
-
-    // Registers /lookup as async
-    @AsyncCommand
-    @Command(name = "lookup", description = "Lookup player stats")
-    public void lookup(CommandSender sender, String[] args) {
-        // Heavy operation in background
-        sender.sendMessage("Looking up stats...");
-    }
-
-    // Registers /warp with tab completion
-    @TabComplete(handler = WarpTab.class)
-    @Command(name = "warp", description = "Warp to a location")
-    public void warp(Player player, String[] args) {
-        if (args.length == 0) {
-            player.sendMessage("Usage: /warp <warpname>");
-            return;
+CommandBuilder.create("teleport")
+    .description("Teleport to another player")
+    .permission("myplugin.teleport")
+    .playerOnly(true)
+    .execute((sender, args) -> {
+        if (args.length != 1) {
+            sender.sendMessage("§cUsage: /teleport <player>");
+            return true;
         }
-        String warpName = args[0];
-        player.sendMessage("🚀 Warping to " + warpName + "...");
-    }
-
-    public static class WarpTab implements TabHandler {
-        @Override
-        public List<String> complete(CommandSender sender, String[] args) {
-            return List.of("spawn", "shop", "arena");
+        
+        Player target = Bukkit.getPlayer(args[0]);
+        if (target != null) {
+            ((Player) sender).teleport(target.getLocation());
+            sender.sendMessage("§aTeleported to " + target.getName());
+        } else {
+            sender.sendMessage("§cPlayer not found!");
         }
+        return true;
+    })
+    .tabComplete((sender, args) -> {
+        return Bukkit.getOnlinePlayers().stream()
+            .map(Player::getName)
+            .collect(Collectors.toList());
+    })
+    .register(this);
+```
+
+### Annotation-Based Commands
+
+```java
+public class PlayerCommands {
+    
+    @Command(name = "heal", permission = "myplugin.heal")
+    public boolean heal(CommandContext ctx) {
+        if (!(ctx.getSender() instanceof Player)) {
+            ctx.getSender().sendMessage("§cOnly players can use this!");
+            return true;
+        }
+        
+        Player player = (Player) ctx.getSender();
+        player.setHealth(player.getMaxHealth());
+        player.sendMessage("§aYou have been healed!");
+        return true;
+    }
+    
+    @TabComplete("heal")
+    public List<String> healComplete(CommandContext ctx) {
+        return Collections.emptyList();
     }
 }
+
+// Register in your main class
+CommandManager manager = new CommandManager(this);
+manager.registerCommands(new PlayerCommands());
 ```
 
----
-
-## 🧑‍💻 Three Ways to Register Commands
-
-You can register commands in any of these ways:
-
-### 1. **CommandBuilder (classic builder style)**
-```java
-new dev.adam.commands.CommandBuilder()
-    .name("hello")
-    .description("Say hello")
-    .executor((sender, args) -> sender.sendMessage("Hello from CommandBuilder!"))
-    .register();
-```
-
-### 2. **CommandManager (annotation class)**
-```java
-new dev.adam.commands.CommandManager(this, new MyCommands());
-```
-
-### 3. **SpigotX static registerCommand (annotation class, recommended)**
-```java
-dev.adam.SpigotX.registerCommand(new MyCommands());
-```
-
----
-
-## ⚡ Async Commands: No More Lag
-
-Just add `@AsyncCommand` to your command method and SpigotX will run it off the main thread.
+### Interactive GUIs
 
 ```java
-@AsyncCommand
-@Command(name = "lookup", description = "Lookup player stats")
-public void lookup(CommandSender sender, String[] args) {
-    // Heavy operation here
+public void openPlayerMenu(Player player) {
+    GUI gui = GUIBuilder.create()
+        .title("§6Player Menu")
+        .size(27)
+        .item(10, ItemBuilder.create(Material.DIAMOND_SWORD)
+            .name("§cPvP Arena")
+            .lore("§7Click to join PvP!")
+            .build())
+        .item(12, ItemBuilder.create(Material.GOLD_INGOT)
+            .name("§eShop")
+            .lore("§7Buy and sell items")
+            .build())
+        .item(14, ItemBuilder.create(Material.BOOK)
+            .name("§aQuests")
+            .lore("§7View available quests")
+            .build())
+        .clickHandler(10, (clicker, item, slot, clickType) -> {
+            clicker.sendMessage("§aTeleporting to PvP arena...");
+            // Teleport logic here
+        })
+        .clickHandler(12, (clicker, item, slot, clickType) -> {
+            openShopGUI(clicker);
+        })
+        .fillEmpty(ItemBuilder.create(Material.GRAY_STAINED_GLASS_PANE)
+            .name(" ")
+            .build())
+        .build();
+        
+    gui.open(player);
 }
 ```
 
----
-
-## 🎯 Events: React to the World
-
-SpigotX supports multiple ways to register events, including a super-simple lambda-based API!
-
-### 1. Using EventBuilder
+### Paginated GUI for Large Lists
 
 ```java
-import dev.adam.events.EventBuilder;
-import org.bukkit.event.player.PlayerJoinEvent;
-
-new EventBuilder<>(PlayerJoinEvent.class)
-    .handle(ctx -> ctx.getPlayer().sendMessage("🎉 Welcome to the server, " + ctx.getPlayer().getName() + "!"))
-    .register();
+public void openPlayerList(Player viewer) {
+    List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
+    
+    PaginatedGUI gui = PaginatedGUI.builder()
+        .title("§6Online Players ({current}/{max})")
+        .itemsPerPage(21)
+        .items(players)
+        .itemConverter((player, slot) -> 
+            ItemBuilder.create(Material.PLAYER_HEAD)
+                .name("§e" + player.getName())
+                .lore("§7Click to teleport!")
+                .skullOwner(player.getName())
+                .build())
+        .itemClickHandler((clicker, item, slot, clickType, targetPlayer) -> {
+            clicker.teleport(targetPlayer.getLocation());
+            clicker.sendMessage("§aTeleported to " + targetPlayer.getName());
+        })
+        .build();
+        
+    gui.open(viewer);
+}
 ```
 
-### 2. Using EventUtil (Lambda, no annotation, no EventBuilder)
+### Event Handling
 
 ```java
-import dev.adam.events.EventUtil;
-import org.bukkit.event.player.PlayerJoinEvent;
+// Simple event listener
+EventBuilder.listen(PlayerJoinEvent.class)
+    .handler(event -> {
+        event.getPlayer().sendMessage("§aWelcome to the server!");
+    })
+    .register(this);
 
-EventUtil.listen(this, PlayerJoinEvent.class, event -> {
-    event.getPlayer().sendMessage("Welcome with EventUtil!");
-});
+// Conditional event with async processing
+EventBuilder.listen(BlockBreakEvent.class)
+    .condition(event -> event.getBlock().getType() == Material.DIAMOND_ORE)
+    .asyncHandler(event -> {
+        // Heavy database operation
+        savePlayerMiningData(event.getPlayer());
+        
+        // Back to main thread
+        Bukkit.getScheduler().runTask(this, () -> {
+            event.getPlayer().sendMessage("§aDiamond ore logged!");
+        });
+    })
+    .register(this);
 ```
 
-### 3. Using SpigotX.on (if you want static sugar)
+### Input Validation
 
 ```java
-SpigotX.on(PlayerJoinEvent.class, ctx -> {
-    ctx.getPlayer().sendMessage("Welcome with SpigotX.on!");
-});
-```
-
----
-
-## 🖼️ GUI: Interactive Menus That Wow
-
-### Simple GUI
-
-```java
-import dev.adam.gui.GUIBuilder;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-
-public class GuiExample {
-    public void openSimpleGui(Player player) {
-        new GUIBuilder("💎 My First GUI", 1)
-            .setItem(4, new ItemStack(Material.EMERALD), ctx -> ctx.getPlayer().sendMessage("💚 You clicked the emerald!"))
-            .open(player);
+public boolean setPlayerMoney(Player player, double amount) {
+    // Validate inputs with clear error messages
+    if (!ValidationUtils.notNull(player, "Player cannot be null")) {
+        return false;
     }
-}
-```
-
-### Animated GUI
-
-```java
-import dev.adam.gui.GUIBuilder;
-import dev.adam.gui.Animation;
-import dev.adam.gui.GUIUpdater;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import java.util.List;
-
-public void openAnimatedGui(Player player) {
-    Animation anim = new Animation(List.of(
-        new ItemStack(Material.RED_WOOL),
-        new ItemStack(Material.GREEN_WOOL),
-        new ItemStack(Material.BLUE_WOOL)
-    ), 10L);
-
-    GUIBuilder builder = new GUIBuilder("Animated", 1)
-        .setItem(4, anim.nextFrame(), ctx -> ctx.getPlayer().sendMessage("Clicked!"));
-
-    GUIUpdater.scheduleRepeating(SpigotX.getPlugin(), builder.build(), anim.getTicksPerFrame(), gui -> {
-        gui.setItem(4, anim.nextFrame(), null);
-    });
-
-    builder.open(player);
-}
-```
-
----
-
-## 📄 Paginated GUI: For Large Lists
-
-PaginatedGUI makes it easy to show large lists with navigation.
-
-```java
-import dev.adam.gui.PaginatedGUI;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import java.util.ArrayList;
-import java.util.List;
-
-public void openPaginatedGui(Player player) {
-    PaginatedGUI pgui = new PaginatedGUI("🛒 Shop", 5);
-
-    List<ItemStack> items = new ArrayList<>();
-    for (int i = 0; i < 50; i++) {
-        items.add(new ItemStack(Material.DIAMOND));
+    
+    if (!ValidationUtils.inRange(amount, 0, 999999, "Amount must be between 0 and 999,999")) {
+        player.sendMessage("§cInvalid amount! Must be between $0 and $999,999");
+        return false;
     }
-    pgui.setContent(items);
-
-    pgui.setPrevButton(new ItemStack(Material.ARROW));
-    pgui.setNextButton(new ItemStack(Material.ARROW));
-
-    // Optional: set handler for each item
-    for (int i = 0; i < items.size(); i++) {
-        int index = i;
-        pgui.setItemHandler(i, ctx -> ctx.getPlayer().sendMessage("Clicked item #" + index));
-    }
-
-    pgui.open(player);
+    
+    // Safe to proceed
+    setBalance(player, amount);
+    player.sendMessage("§aBalance set to $" + String.format("%.2f", amount));
+    return true;
 }
 ```
 
----
+## 🔄 Migration from Traditional Spigot
 
-## 🏷️ Placeholders: Dynamic Text Everywhere
-
-```java
-import dev.adam.placeholders.PlaceholderManager;
-import org.bukkit.entity.Player;
-
-public class PlaceholderExample {
-    public void setupPlaceholders() {
-        PlaceholderManager.register("rank", (Player p) -> "VIP");
-        PlaceholderManager.register("balance", (Player p) -> "1000");
-    }
-}
-```
-
-**Usage in GUI:**
-```java
-gui.setTitle("Balance: {balance}");
-```
-
----
-
-## ⏱️ Animation Utilities: Scheduled GUI Updates
+SpigotX works alongside existing code - no need to rewrite everything:
 
 ```java
-import dev.adam.gui.GUIUpdater;
-import dev.adam.gui.GUI;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
-
-public void startUpdatingGui(GUI gui) {
-    GUIUpdater.scheduleRepeating(dev.adam.SpigotX.getPlugin(), gui, 20L, g -> {
-        g.setItem(0, new ItemStack(Material.values()[(int) (Math.random() * Material.values().length)]), null);
+@Override
+public void onEnable() {
+    // Keep existing commands
+    getCommand("oldcommand").setExecutor(new OldCommandExecutor());
+    
+    // Add new SpigotX commands
+    SpigotX.registerCommand("newcommand", (sender, args) -> {
+        // Modern implementation
+        return true;
     });
 }
 ```
 
----
+## 📖 API Reference
 
-## 🛠️ Pro Tips & Best Practices
+### Core Classes
 
-- **Always call `SpigotX.init(this)` in your `onEnable()` before using any SpigotX features.**
-- **Register commands and events after initialization.**
-- **For GUIs, always close them when done to avoid memory leaks.**
-- **Use async commands for heavy operations, but always return to the main thread for Bukkit API calls.**
-- **Use placeholders for all dynamic text in GUIs and messages.**
-- **Modularize your code: separate commands, GUIs, and event listeners into different classes.**
-- **Check the [JavaDoc](https://adamtroyan.github.io/SpigotX-Javadoc/) for full API documentation.**
-- **If you get an error about SpigotX not being initialized, check that you called `SpigotX.init(this)` first!**
-- **Use meaningful command descriptions and permissions for better UX and security.**
-- **Document your code and use comments to help future maintainers (or yourself!).**
+| Class | Description |
+|-------|-------------|
+| `SpigotX` | Main entry point - initialize and register commands |
+| `CommandBuilder` | Fluent API for command creation |
+| `CommandManager` | Annotation-based command registration |
+| `GUIBuilder` | Builder pattern for creating GUIs |
+| `PaginatedGUI` | Multi-page inventory GUIs |
+| `EventBuilder` | Fluent event handling |
+| `ValidationUtils` | Input validation utilities |
+| `ItemBuilder` | Fluent ItemStack creation |
 
----
+### Key Annotations
 
-## ❓ FAQ
+| Annotation | Purpose |
+|------------|---------|
+| `@Command` | Mark methods as command handlers |
+| `@TabComplete` | Define tab completion for commands |
 
-**Q:** My command doesn't work!  
-**A:** Make sure you registered it with one of the supported ways (`CommandBuilder`, `CommandManager`, or `SpigotX.registerCommand`) and annotated it with `@Command`.
+## 🛠️ Requirements
 
-**Q:** How do I update a GUI for all viewers?  
-**A:** Use `gui.updateAllViewers();`
+- **Java 8+** - Modern Java features for clean code
+- **Spigot/Paper 1.8+** - Compatible with all modern Minecraft versions
+- **Maven/Gradle** - For dependency management
 
-**Q:** Can I use SpigotX with Paper or Purpur?  
-**A:** Yes! SpigotX is compatible with all Spigot forks.
+## 🤝 Contributing
 
-**Q:** How do I unregister an event or GUI updater?  
-**A:** Use your own unregister logic or `GUIUpdater.cancel(gui)`.
+We welcome contributions! Here's how to get started:
 
-**Q:** How do I listen to events without annotations?  
-**A:** Use `EventUtil.listen(plugin, EventClass.class, event -> { ... });`
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/AmazingFeature`)
+3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`)
+4. **Push** to the branch (`git push origin feature/AmazingFeature`)
+5. **Open** a Pull Request
 
-**Q:** How do I make a command async?  
-**A:** Add `@AsyncCommand` to your command method.
+Please read our [Contributing Guidelines](CONTRIBUTING.md) for detailed information.
 
-**Q:** How do I add tab completion?  
-**A:** Implement `TabHandler` and use `@TabComplete(handler = MyTabHandler.class)`.
+## 📋 Roadmap
 
-**Q:** How do I animate a GUI item?  
-**A:** Use `Animation` and `GUIUpdater.scheduleRepeating`.
+- [ ] **Custom Entity API** - Simplified custom entity creation
+- [ ] **Database ORM** - Built-in database mapping
+- [ ] **Packet API** - Easy packet manipulation
+- [ ] **World Management** - Advanced world utilities
+- [ ] **Economy API** - Standardized economy interface
 
-**Q:** How do I make a paginated GUI with navigation at the bottom row?  
-**A:** Use `PaginatedGUI` with 5+ rows, set prev/next items, and set content.
+## 📄 License
 
-**Q:** How do I use placeholders in GUI titles?  
-**A:** Register with `PlaceholderManager.register` and use `{placeholder}` in the title.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+## 🆘 Support & Community
 
-## 📚 Further Reading
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/AdamTroyan/SpigotX/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/AdamTroyan/SpigotX/discussions)
+- **📚 Documentation**: [Wiki](https://github.com/AdamTroyan/SpigotX/wiki)
+- **💬 Discord**: [Join our community](https://discord.gg/spigotx)
 
-- [SpigotX Javadoc](https://adamtroyan.github.io/SpigotX-Javadoc/)
-- [Spigot Plugin Development Guide](https://www.spigotmc.org/wiki/spigot-plugin-development/)
-- [JitPack Documentation](https://jitpack.io/docs/)
+## 🙏 Acknowledgments
 
----
-
-## 📝 License
-
-See the main repository for license details.
-
----
-
-> **Ready to build something amazing?**  
-> SpigotX is your secret weapon.
->
-> *If you have suggestions or want to contribute, open an issue or PR on GitHub!*
+- **Spigot Team** - For the amazing Spigot API
+- **Contributors** - Everyone who helped improve SpigotX
+- **Community** - For feedback and bug reports
 
 ---
 
-**This README is just the beginning. For full documentation, advanced usage, and more examples, see the [JavaDoc](https://adamtroyan.github.io/SpigotX-Javadoc/) and the source code!**
+<div align="center">
 
----
+**[⭐ Star this repo](https://github.com/AdamTroyan/SpigotX)** if SpigotX helped you build better plugins!
 
-*Happy coding and may your plugins be bug-free and full of features!* 🚀
+*Made with ❤️ for the Minecraft development community*
