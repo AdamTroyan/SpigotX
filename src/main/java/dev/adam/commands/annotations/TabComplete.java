@@ -14,5 +14,10 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface TabComplete {
+    /**
+    * The command name this tab completer is for.
+    * 
+    * @return the command name
+    */
     String command();
 }

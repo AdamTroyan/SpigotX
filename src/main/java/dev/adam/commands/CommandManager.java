@@ -17,13 +17,47 @@ import java.util.function.BiFunction;
 
 /**
  * Simple and powerful command management system.
+ * 
+ * <p>This class provides a comprehensive command management system for Bukkit plugins,
+ * supporting both annotation-based and programmatic command registration. It handles
+ * command execution, permission checking, tab completion, and sub-command routing.</p>
+ * 
+ * <p>Features include:</p>
+ * <ul>
+ *   <li>Annotation-based command registration using {@link Command} and {@link SubCommand}</li>
+ *   <li>Programmatic command registration with fluent API</li>
+ *   <li>Automatic tab completion support</li>
+ *   <li>Permission-based command access control</li>
+ *   <li>Asynchronous command execution support</li>
+ *   <li>Sub-command routing and nested command structures</li>
+ * </ul>
+ * 
+ * @author Adam
+ * @version 1.0
+ * @since 1.0
  */
 public class CommandManager {
+    /** Map of registered commands keyed by their full command path */
     private static final Map<String, RegisteredCommand> commands = new HashMap<>();
+    
+    /** Map of custom tab completers keyed by command name */
     private static final Map<String, BiFunction<CommandSender, String[], List<String>>> tabCompleters = new HashMap<>();
+    
+    /** Set of root commands that have been registered with Bukkit */
     private static final Set<String> registeredRoots = new HashSet<>();
 
-        public CommandManager(org.bukkit.plugin.Plugin plugin, Object commandInstance) {
+    /**
+     * Creates a new CommandManager and registers commands from the instance.
+     * 
+     * <p>This constructor scans the provided command instance for methods annotated with
+     * {@link Command}, {@link SubCommand}, or {@link TabComplete} and automatically
+     * registers them with the command system.</p>
+     * 
+     * @param plugin the plugin instance that owns these commands
+     * @param commandInstance the object containing command methods
+     * @throws IllegalArgumentException if plugin or commandInstance is null
+     */
+    public CommandManager(org.bukkit.plugin.Plugin plugin, Object commandInstance) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
@@ -44,7 +78,16 @@ public class CommandManager {
         }
     }
 
-    // Register annotation-based commands
+    /**
+     * Registers commands from an annotated class instance.
+     * 
+     * <p>This method scans the provided instance for methods annotated with command
+     * annotations and registers them with the command system. This is useful when
+     * you want to register commands without creating a CommandManager instance.</p>
+     * 
+     * @param commandInstance the object containing command methods
+     * @throws IllegalArgumentException if commandInstance is null
+     */
     public static void register(Object commandInstance) {
         Method[] methods = commandInstance.getClass().getDeclaredMethods();
         
@@ -60,19 +103,49 @@ public class CommandManager {
         }
     }
 
-    // Register simple programmatic command
+    /**
+     * Registers a command with full configuration.
+     * 
+     * <p>This method allows programmatic registration of commands with complete
+     * configuration including name, description, permission, and executor.</p>
+     * 
+     * @param name the command name
+     * @param description the command description
+     * @param permission the required permission (empty string for no permission)
+     * @param executor the command executor function
+     */
     public static void register(String name, String description, String permission, 
                                BiConsumer<CommandSender, String[]> executor) {
         registerSimple(name, description, permission, false, executor);
     }
 
-    // Register async programmatic command
+    /**
+     * Registers an asynchronous command.
+     * 
+     * <p>Commands registered with this method will be executed on a separate thread,
+     * preventing them from blocking the main server thread during execution.</p>
+     * 
+     * @param name the command name
+     * @param description the command description
+     * @param permission the required permission (empty string for no permission)
+     * @param executor the command executor function
+     */
     public static void registerAsync(String name, String description, String permission,
                                    BiConsumer<CommandSender, String[]> executor) {
         registerSimple(name, description, permission, true, executor);
     }
 
-    // Register context-based command
+    /**
+     * Registers a command with CommandContext executor.
+     * 
+     * <p>This method registers a command that uses {@link CommandContext} for
+     * enhanced command handling with utility methods and contextual information.</p>
+     * 
+     * @param name the command name
+     * @param description the command description
+     * @param permission the required permission (empty string for no permission)
+     * @param executor the context executor function
+     */
     public static void registerContext(String name, String description, String permission,
                                      BiConsumer<CommandContext, Void> executor) {
         register(name, description, permission, (sender, args) -> {
@@ -81,7 +154,18 @@ public class CommandManager {
         });
     }
 
-    // Register player-only command
+    /**
+     * Registers a player-only command.
+     * 
+     * <p>Commands registered with this method can only be executed by players.
+     * If a non-player (console, command block) tries to execute the command,
+     * they will receive an error message.</p>
+     * 
+     * @param name the command name
+     * @param description the command description
+     * @param permission the required permission (empty string for no permission)
+     * @param executor the player executor function
+     */
     public static void registerPlayer(String name, String description, String permission,
                                     BiConsumer<Player, String[]> executor) {
         register(name, description, permission, (sender, args) -> {
@@ -93,6 +177,12 @@ public class CommandManager {
         });
     }
 
+    /**
+     * Registers a command method annotated with {@link Command}.
+     * 
+     * @param instance the object instance containing the method
+     * @param method the method to register as a command
+     */
     private static void registerCommand(Object instance, Method method) {
         Command cmd = method.getAnnotation(Command.class);
         String name = cmd.name().toLowerCase();
@@ -107,6 +197,12 @@ public class CommandManager {
         setupBukkitCommand(name);
     }
 
+    /**
+     * Registers a sub-command method annotated with {@link SubCommand}.
+     * 
+     * @param instance the object instance containing the method
+     * @param method the method to register as a sub-command
+     */
     private static void registerSubCommand(Object instance, Method method) {
         SubCommand subCmd = method.getAnnotation(SubCommand.class);
         String parent = subCmd.parent().toLowerCase();
@@ -123,6 +219,12 @@ public class CommandManager {
         setupBukkitCommand(parent);
     }
 
+    /**
+     * Registers a tab completion method annotated with {@link TabComplete}.
+     * 
+     * @param instance the object instance containing the method
+     * @param method the method to register as a tab completer
+     */
     private static void registerTabCompleter(Object instance, Method method) {
         TabComplete tabComplete = method.getAnnotation(TabComplete.class);
         String command = tabComplete.command().toLowerCase();
@@ -139,6 +241,15 @@ public class CommandManager {
         });
     }
 
+    /**
+     * Registers a simple programmatic command.
+     * 
+     * @param name the command name
+     * @param description the command description
+     * @param permission the required permission
+     * @param async whether the command should run asynchronously
+     * @param executor the command executor
+     */
     private static void registerSimple(String name, String description, String permission,
                                      boolean async, BiConsumer<CommandSender, String[]> executor) {
         RegisteredCommand regCmd = new RegisteredCommand(
@@ -149,6 +260,13 @@ public class CommandManager {
         setupBukkitCommand(name);
     }
 
+    /**
+     * Validates that a command method has the correct signature.
+     * 
+     * @param method the method to validate
+     * @param commandName the command name for error messages
+     * @throws IllegalArgumentException if the method signature is invalid
+     */
     private static void validateMethod(Method method, String commandName) {
         if (method.getParameterCount() != 2) {
             throw new IllegalArgumentException("Command method '" + commandName + "' must have 2 parameters");
@@ -163,6 +281,11 @@ public class CommandManager {
         }
     }
 
+    /**
+     * Sets up a Bukkit command with executor and tab completer.
+     * 
+     * @param rootCommand the root command name to setup
+     */
     private static void setupBukkitCommand(String rootCommand) {
         if (!registeredRoots.add(rootCommand)) return;
 
@@ -183,6 +306,14 @@ public class CommandManager {
         });
     }
 
+    /**
+     * Executes a command based on the sender, label, and arguments.
+     * 
+     * @param sender the command sender
+     * @param label the command label that was used
+     * @param args the command arguments
+     * @return true if the command was handled, false otherwise
+     */
     private static boolean executeCommand(CommandSender sender, String label, String[] args) {
         // Try to find matching command
         List<String> parts = new ArrayList<>();
@@ -212,6 +343,14 @@ public class CommandManager {
         return true;
     }
 
+    /**
+     * Executes a registered command with proper parameter handling.
+     * 
+     * @param regCmd the registered command to execute
+     * @param sender the command sender
+     * @param args the command arguments
+     * @param commandPath the full command path that was matched
+     */
     private static void executeRegisteredCommand(RegisteredCommand regCmd, CommandSender sender, 
                                                String[] args, String commandPath) {
         Runnable execution = () -> {
@@ -252,6 +391,12 @@ public class CommandManager {
         }
     }
 
+    /**
+     * Shows available commands to the sender when no specific command is found.
+     * 
+     * @param sender the command sender to show commands to
+     * @param label the base command label
+     */
     private static void showAvailableCommands(CommandSender sender, String label) {
         List<String> available = new ArrayList<>();
         
@@ -270,6 +415,14 @@ public class CommandManager {
         }
     }
 
+    /**
+     * Gets tab completion suggestions for a command.
+     * 
+     * @param sender the command sender requesting completions
+     * @param label the command label
+     * @param args the current command arguments
+     * @return a list of tab completion suggestions
+     */
     private static List<String> getTabCompletions(CommandSender sender, String label, String[] args) {
         // Check for custom tab completer
         BiFunction<CommandSender, String[], List<String>> completer = tabCompleters.get(label.toLowerCase());
@@ -297,21 +450,60 @@ public class CommandManager {
         return Collections.emptyList();
     }
 
-    // Internal command representation
+    /**
+     * Internal command representation that holds command metadata and execution details.
+     * 
+     * <p>This class encapsulates all information needed to execute a registered command,
+     * including the target instance, method, permissions, and execution settings.</p>
+     */
     private static class RegisteredCommand {
+        /** The object instance containing the command method (null for programmatic commands) */
         private final Object instance;
+        
+        /** The method to invoke when executing this command (null for programmatic commands) */
         private final Method method;
+        
+        /** The full name/path of the command */
         private final String name;
+        
+        /** The permission required to execute this command */
         private final String permission;
+        
+        /** The description of what this command does */
         private final String description;
+        
+        /** Whether this command should be executed asynchronously */
         private final boolean async;
+        
+        /** The executor function for programmatic commands (null for annotation-based commands) */
         private final BiConsumer<CommandSender, String[]> executor;
 
+        /**
+         * Creates a new RegisteredCommand for annotation-based commands.
+         * 
+         * @param instance the object instance containing the command method
+         * @param method the method to invoke
+         * @param name the command name
+         * @param permission the required permission
+         * @param description the command description
+         * @param async whether to execute asynchronously
+         */
         public RegisteredCommand(Object instance, Method method, String name, String permission, 
                                String description, boolean async) {
             this(instance, method, name, permission, description, async, null);
         }
 
+        /**
+         * Creates a new RegisteredCommand with full configuration.
+         * 
+         * @param instance the object instance (null for programmatic commands)
+         * @param method the method to invoke (null for programmatic commands)
+         * @param name the command name
+         * @param permission the required permission
+         * @param description the command description
+         * @param async whether to execute asynchronously
+         * @param executor the executor function (null for annotation-based commands)
+         */
         public RegisteredCommand(Object instance, Method method, String name, String permission,
                                String description, boolean async, BiConsumer<CommandSender, String[]> executor) {
             this.instance = instance;
@@ -327,14 +519,61 @@ public class CommandManager {
             }
         }
 
+        /**
+         * Gets the object instance containing the command method.
+         * 
+         * @return the instance, or null for programmatic commands
+         */
         public Object getInstance() { return instance; }
+        
+        /**
+         * Gets the method to invoke when executing this command.
+         * 
+         * @return the method, or null for programmatic commands
+         */
         public Method getMethod() { return method; }
+        
+        /**
+         * Gets the full name/path of the command.
+         * 
+         * @return the command name
+         */
         public String getName() { return name; }
+        
+        /**
+         * Gets the permission required to execute this command.
+         * 
+         * @return the permission string, or empty string if no permission required
+         */
         public String getPermission() { return permission; }
+        
+        /**
+         * Gets the description of what this command does.
+         * 
+         * @return the command description
+         */
         public String getDescription() { return description; }
+        
+        /**
+         * Checks if this command should be executed asynchronously.
+         * 
+         * @return true if async execution is enabled
+         */
         public boolean isAsync() { return async; }
+        
+        /**
+         * Gets the executor function for programmatic commands.
+         * 
+         * @return the executor function, or null for annotation-based commands
+         */
         public BiConsumer<CommandSender, String[]> getExecutor() { return executor; }
 
+        /**
+         * Checks if the given sender has permission to execute this command.
+         * 
+         * @param sender the command sender to check
+         * @return true if sender has permission or no permission is required
+         */
         public boolean hasPermission(CommandSender sender) {
             return permission.isEmpty() || sender.hasPermission(permission);
         }
