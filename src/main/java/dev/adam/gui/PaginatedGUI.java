@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
 
 /**
  * Advanced paginated GUI system for Bukkit/Spigot plugins.
- * 
+ * <p>
  * This class provides a comprehensive solution for creating paginated inventories with
  * advanced features like filtering, searching, sorting, and custom layouts. It handles
  * navigation buttons, content management, and provides extensive customization options
  * for creating professional-looking inventory interfaces.
- * 
+ *
  * <p>Key features:</p>
  * <ul>
  *   <li>Automatic pagination with configurable items per page</li>
@@ -39,32 +39,52 @@ import java.util.stream.Collectors;
  *   <li>Customizable themes and templates</li>
  *   <li>Performance optimizations with caching</li>
  * </ul>
- * 
+ *
  * @author Adam
  * @version 1.0
  * @since 1.0
  */
 public class PaginatedGUI implements GUIBase {
-    /** The main inventory that holds all GUI items */
+    /**
+     * The main inventory that holds all GUI items
+     */
     private final Inventory inventory;
-    /** Map of slot handlers for click events */
+    /**
+     * Map of slot handlers for click events
+     */
     private final Map<Integer, Consumer<GUIClickContext>> handlers = new HashMap<>();
 
-    /** The main content items to paginate */
+    /**
+     * The main content items to paginate
+     */
     private List<ItemStack> items;
-    /** Current page number (0-based) */
+    /**
+     * Current page number (0-based)
+     */
     private int currentPage = 0;
-    /** Number of content items per page */
+    /**
+     * Number of content items per page
+     */
     private int itemsPerPage;
-    /** Navigation button for previous page */
+    /**
+     * Navigation button for previous page
+     */
     private ItemStack prevButton;
-    /** Navigation button for next page */
+    /**
+     * Navigation button for next page
+     */
     private ItemStack nextButton;
-    /** Action to execute when content items are clicked */
+    /**
+     * Action to execute when content items are clicked
+     */
     private Consumer<GUIClickContext> mainItemAction;
-    /** Background item for empty slots */
+    /**
+     * Background item for empty slots
+     */
     private ItemStack glassPane;
-    /** Whether the GUI has been properly initialized */
+    /**
+     * Whether the GUI has been properly initialized
+     */
     private boolean isInitialized = false;
 
     // === FILTERING SYSTEM ===
@@ -76,18 +96,22 @@ public class PaginatedGUI implements GUIBase {
     public interface ItemFilter {
         /**
          * Tests whether an item should be included in the display.
-         * 
-         * @param item the ItemStack to test
+         *
+         * @param item  the ItemStack to test
          * @param index the original index of the item in the list
          * @return true if the item should be shown, false otherwise
          */
         boolean test(ItemStack item, int index);
     }
 
-    /** List of active filters applied to the content */
+    /**
+     * List of active filters applied to the content
+     */
     private final List<ItemFilter> filters = new ArrayList<>();
 
-    /** Current search query for filtering by name */
+    /**
+     * Current search query for filtering by name
+     */
     private String searchQuery = "";
 
     // === SORTING SYSTEM ===
@@ -96,13 +120,21 @@ public class PaginatedGUI implements GUIBase {
      * Enumeration of available sorting types for organizing displayed items.
      */
     public enum SortType {
-        /** Sort items alphabetically by name */
+        /**
+         * Sort items alphabetically by name
+         */
         ALPHABETICAL,
-        /** Sort items by stack amount */
+        /**
+         * Sort items by stack amount
+         */
         AMOUNT,
-        /** Sort items by material type */
+        /**
+         * Sort items by material type
+         */
         MATERIAL,
-        /** Use custom comparator for sorting */
+        /**
+         * Use custom comparator for sorting
+         */
         CUSTOM
     }
 
@@ -112,7 +144,7 @@ public class PaginatedGUI implements GUIBase {
     public interface ItemComparator {
         /**
          * Compares two ItemStacks for sorting purposes.
-         * 
+         *
          * @param a first ItemStack to compare
          * @param b second ItemStack to compare
          * @return negative if a < b, zero if a == b, positive if a > b
@@ -120,11 +152,17 @@ public class PaginatedGUI implements GUIBase {
         int compare(ItemStack a, ItemStack b);
     }
 
-    /** Current sort type being used */
+    /**
+     * Current sort type being used
+     */
     private SortType sortType = SortType.ALPHABETICAL;
-    /** Whether sorting is in ascending order */
+    /**
+     * Whether sorting is in ascending order
+     */
     private boolean sortAscending = true;
-    /** Custom comparator for CUSTOM sort type */
+    /**
+     * Custom comparator for CUSTOM sort type
+     */
     private ItemComparator customComparator;
 
     // === LAYOUT SYSTEM ===
@@ -133,19 +171,31 @@ public class PaginatedGUI implements GUIBase {
      * Enumeration of available layout patterns for item placement.
      */
     public enum LayoutPattern {
-        /** Standard grid layout filling rows left to right */
+        /**
+         * Standard grid layout filling rows left to right
+         */
         GRID,
-        /** Single column centered layout */
+        /**
+         * Single column centered layout
+         */
         LIST,
-        /** Items placed from center outward */
+        /**
+         * Items placed from center outward
+         */
         CENTERED,
-        /** Items placed around the border first */
+        /**
+         * Items placed around the border first
+         */
         BORDER,
-        /** Checkerboard pattern placement */
+        /**
+         * Checkerboard pattern placement
+         */
         CHECKERBOARD
     }
 
-    /** Current layout pattern being used */
+    /**
+     * Current layout pattern being used
+     */
     private LayoutPattern layoutPattern = LayoutPattern.GRID;
 
     // === EVENT SYSTEM ===
@@ -156,7 +206,7 @@ public class PaginatedGUI implements GUIBase {
     public interface GUIEventListener {
         /**
          * Called when the page changes.
-         * 
+         *
          * @param oldPage the previous page number
          * @param newPage the new current page number
          */
@@ -164,44 +214,50 @@ public class PaginatedGUI implements GUIBase {
 
         /**
          * Called when an item is clicked.
-         * 
-         * @param item the ItemStack that was clicked
-         * @param slot the slot number where the click occurred
+         *
+         * @param item      the ItemStack that was clicked
+         * @param slot      the slot number where the click occurred
          * @param clickType the type of click performed
          */
         void onItemClick(ItemStack item, int slot, ClickType clickType);
 
         /**
          * Called when the GUI is opened by a player.
-         * 
+         *
          * @param player the player who opened the GUI
          */
         void onGUIOpen(Player player);
 
         /**
          * Called when the GUI is closed by a player.
-         * 
+         *
          * @param player the player who closed the GUI
          */
         void onGUIClose(Player player);
 
         /**
          * Called when the content of the GUI changes.
-         * 
+         *
          * @param oldItems the previous item list
          * @param newItems the new item list
          */
         void onContentChange(List<ItemStack> oldItems, List<ItemStack> newItems);
     }
 
-    /** List of registered event listeners */
+    /**
+     * List of registered event listeners
+     */
     private final List<GUIEventListener> eventListeners = new ArrayList<>();
 
     // === CACHING SYSTEM ===
 
-    /** Cache for processed content to improve performance */
+    /**
+     * Cache for processed content to improve performance
+     */
     private final Map<String, List<ItemStack>> contentCache = new HashMap<>();
-    /** Whether content caching is enabled */
+    /**
+     * Whether content caching is enabled
+     */
     private boolean cacheEnabled = true;
 
     // === THEME SYSTEM ===
@@ -210,20 +266,40 @@ public class PaginatedGUI implements GUIBase {
      * Theme configuration for customizing GUI appearance.
      */
     public static class GUITheme {
+        /**
+         * The background glass pane item used in empty slots
+         */
         public ItemStack glassPane;
 
+        /**
+         * The previous page navigation button
+         */
         public ItemStack prevButton;
 
+        /**
+         * The next page navigation button
+         */
         public ItemStack nextButton;
 
+        /**
+         * Format string for GUI titles with page information
+         */
         public String titleFormat = "%s - Page %d/%d";
 
+        /**
+         * Primary color used in the theme
+         */
         public ChatColor primaryColor = ChatColor.GRAY;
 
+        /**
+         * Secondary color used in the theme
+         */
         public ChatColor secondaryColor = ChatColor.DARK_GRAY;
     }
 
-    /** Current theme configuration */
+    /**
+     * Current theme configuration
+     */
     private GUITheme theme;
 
     // === STATISTICS SYSTEM ===
@@ -270,7 +346,7 @@ public class PaginatedGUI implements GUIBase {
 
         /**
          * Gets the total number of clicks recorded.
-         * 
+         *
          * @return total click count
          */
         public int getTotalClicks() {
@@ -279,7 +355,7 @@ public class PaginatedGUI implements GUIBase {
 
         /**
          * Gets the total number of page changes recorded.
-         * 
+         *
          * @return total page change count
          */
         public int getPageChanges() {
@@ -288,7 +364,7 @@ public class PaginatedGUI implements GUIBase {
 
         /**
          * Gets the total time the GUI has been open in milliseconds.
-         * 
+         *
          * @return total open time in milliseconds
          */
         public long getTotalTimeOpen() {
@@ -296,21 +372,23 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
-    /** Statistics instance for this GUI */
+    /**
+     * Statistics instance for this GUI
+     */
     private final GUIStatistics statistics = new GUIStatistics();
 
     // === CONSTRUCTOR ===
 
     /**
      * Creates a new paginated GUI with the specified title and number of rows.
-     * 
+     *
      * @param title the title displayed at the top of the inventory
-     * @param rows the number of rows in the inventory (minimum 2, maximum 6)
+     * @param rows  the number of rows in the inventory (minimum 2, maximum 6)
      */
     public PaginatedGUI(String title, int rows) {
         if (rows < 2) rows = 2;
         if (rows > 6) rows = 6;
-        
+
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
         this.itemsPerPage = (rows - 1) * 9; // Reserve last row for navigation
 
@@ -327,7 +405,8 @@ public class PaginatedGUI implements GUIBase {
         int lastRowStart = inventory.getSize() - 9;
         for (int i = lastRowStart; i < inventory.getSize(); i++) {
             inventory.setItem(i, glassPane);
-            setItemHandler(i, ctx -> {}); // Empty handler to prevent null clicks
+            setItemHandler(i, ctx -> {
+            }); // Empty handler to prevent null clicks
         }
     }
 
@@ -336,7 +415,7 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Sets the main content items to be paginated.
      * This will reset the current page to 0 and refresh the display.
-     * 
+     *
      * @param items the list of ItemStacks to paginate
      */
     public void setContent(List<ItemStack> items) {
@@ -351,7 +430,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the previous page navigation button.
-     * 
+     *
      * @param prev the ItemStack to use as the previous button
      */
     public void setPrevButton(ItemStack prev) {
@@ -363,7 +442,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the next page navigation button.
-     * 
+     *
      * @param next the ItemStack to use as the next button
      */
     public void setNextButton(ItemStack next) {
@@ -375,7 +454,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the background glass pane item for empty slots.
-     * 
+     *
      * @param glassPane the ItemStack to use as background (null to use theme default)
      */
     public void setGlassPane(ItemStack glassPane) {
@@ -389,7 +468,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the action to execute when content items are clicked.
-     * 
+     *
      * @param action the Consumer to handle content item clicks
      */
     public void setMainItemAction(Consumer<GUIClickContext> action) {
@@ -403,9 +482,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fills a specific row with the given item and handler if all slots in that row are empty.
-     * 
-     * @param row the row number to fill (0-based, 0 is top row)
-     * @param item the ItemStack to place in empty slots
+     *
+     * @param row     the row number to fill (0-based, 0 is top row)
+     * @param item    the ItemStack to place in empty slots
      * @param handler the click handler for the items (can be null)
      */
     public void fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -431,9 +510,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fills a specific row with the given item and handler, regardless of current contents.
-     * 
-     * @param row the row number to fill (0-based)
-     * @param item the ItemStack to place in all slots
+     *
+     * @param row     the row number to fill (0-based)
+     * @param item    the ItemStack to place in all slots
      * @param handler the click handler for the items (can be null)
      */
     public void fillRow(int row, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -454,8 +533,8 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fills the border of the GUI with the specified item and handler.
-     * 
-     * @param item the ItemStack to use for border slots
+     *
+     * @param item    the ItemStack to use for border slots
      * @param handler the click handler for border items (can be null)
      */
     public void fillBorder(ItemStack item, Consumer<GUIClickContext> handler) {
@@ -479,8 +558,8 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fills all empty slots in the GUI with the specified item and handler.
-     * 
-     * @param item the ItemStack to use for empty slots
+     *
+     * @param item    the ItemStack to use for empty slots
      * @param handler the click handler for the items (can be null)
      */
     public void fillEmpty(ItemStack item, Consumer<GUIClickContext> handler) {
@@ -499,9 +578,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets an item and handler for a specific slot.
-     * 
-     * @param slot the slot index to set
-     * @param item the ItemStack to place in the slot
+     *
+     * @param slot    the slot index to set
+     * @param item    the ItemStack to place in the slot
      * @param handler the click handler for the item (can be null)
      */
     public void setItem(int slot, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -515,7 +594,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the ItemStack at the specified slot.
-     * 
+     *
      * @param slot the slot index to get
      * @return the ItemStack at the slot, or null if empty or invalid slot
      */
@@ -528,7 +607,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Removes the item and handler from the specified slot.
-     * 
+     *
      * @param slot the slot index to clear
      */
     public void removeItem(int slot) {
@@ -540,8 +619,8 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets a click handler for a specific slot.
-     * 
-     * @param slot the slot index to set the handler for
+     *
+     * @param slot    the slot index to set the handler for
      * @param handler the click handler (can be null to remove)
      */
     public void setItemHandler(int slot, Consumer<GUIClickContext> handler) {
@@ -556,7 +635,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the click handler for a specific slot.
-     * 
+     *
      * @param slot the slot index to get the handler for
      * @return the click handler, or null if none exists
      */
@@ -566,7 +645,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if a slot has a click handler assigned.
-     * 
+     *
      * @param slot the slot index to check
      * @return true if a handler exists, false otherwise
      */
@@ -576,7 +655,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the number of rows in the inventory.
-     * 
+     *
      * @return the number of rows
      */
     public int getRows() {
@@ -585,7 +664,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the size of the inventory (total number of slots).
-     * 
+     *
      * @return the inventory size
      */
     public int getSize() {
@@ -596,7 +675,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Opens a specific page of the pagination.
-     * 
+     *
      * @param page the page number to open (0-based)
      */
     public void openPage(int page) {
@@ -606,7 +685,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Navigates to the next page if available.
-     * 
+     *
      * @return true if navigation was successful, false if no next page exists
      */
     public boolean nextPage() {
@@ -619,7 +698,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Navigates to the previous page if available.
-     * 
+     *
      * @return true if navigation was successful, false if no previous page exists
      */
     public boolean previousPage() {
@@ -651,7 +730,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the total number of pages available.
-     * 
+     *
      * @return the total page count (minimum 1)
      */
     public int getTotalPages() {
@@ -661,7 +740,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if there is a next page available.
-     * 
+     *
      * @return true if there is a next page, false otherwise
      */
     public boolean hasNextPage() {
@@ -670,7 +749,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if there is a previous page available.
-     * 
+     *
      * @return true if there is a previous page, false otherwise
      */
     public boolean hasPreviousPage() {
@@ -679,7 +758,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the current page number.
-     * 
+     *
      * @return the current page (0-based)
      */
     public int getCurrentPage() {
@@ -688,7 +767,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the index of the first item displayed on the current page.
-     * 
+     *
      * @return the starting index for current page items
      */
     public int getCurrentPageStartIndex() {
@@ -697,7 +776,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the index of the last item displayed on the current page.
-     * 
+     *
      * @return the ending index for current page items
      */
     public int getCurrentPageEndIndex() {
@@ -707,7 +786,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the number of items displayed on the current page.
-     * 
+     *
      * @return the count of items on current page
      */
     public int getCurrentPageItemCount() {
@@ -717,7 +796,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the page number that contains the specified item index.
-     * 
+     *
      * @param itemIndex the index of the item to find
      * @return the page number containing the item, or -1 if index is invalid
      */
@@ -730,7 +809,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Opens the page containing the specified item index.
-     * 
+     *
      * @param itemIndex the index of the item to navigate to
      * @return true if navigation was successful, false if index is invalid
      */
@@ -748,7 +827,7 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Adds a filter to the content display.
      * Filters are applied in the order they are added.
-     * 
+     *
      * @param filter the ItemFilter to add
      */
     public void addFilter(ItemFilter filter) {
@@ -760,7 +839,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Removes a specific filter from the content display.
-     * 
+     *
      * @param filter the ItemFilter to remove
      */
     public void removeFilter(ItemFilter filter) {
@@ -781,7 +860,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the search query for filtering items by name.
-     * 
+     *
      * @param query the search string (case-insensitive)
      */
     public void setSearchQuery(String query) {
@@ -801,7 +880,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the current search query.
-     * 
+     *
      * @return the current search query
      */
     public String getSearchQuery() {
@@ -810,7 +889,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets all active filters.
-     * 
+     *
      * @return a copy of the filter list
      */
     public List<ItemFilter> getFilters() {
@@ -819,7 +898,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if any filters are currently active.
-     * 
+     *
      * @return true if filters exist, false otherwise
      */
     public boolean hasFilters() {
@@ -830,8 +909,8 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the sorting type and order for displayed items.
-     * 
-     * @param type the SortType to use
+     *
+     * @param type      the SortType to use
      * @param ascending true for ascending order, false for descending
      */
     public void setSorting(SortType type, boolean ascending) {
@@ -843,7 +922,7 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Sets a custom comparator for sorting items.
      * This automatically sets the sort type to CUSTOM.
-     * 
+     *
      * @param comparator the ItemComparator to use for sorting
      */
     public void setCustomComparator(ItemComparator comparator) {
@@ -854,7 +933,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the current sort type.
-     * 
+     *
      * @return the current SortType
      */
     public SortType getSortType() {
@@ -863,7 +942,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if sorting is in ascending order.
-     * 
+     *
      * @return true if ascending, false if descending
      */
     public boolean isSortAscending() {
@@ -881,7 +960,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the layout pattern for item placement.
-     * 
+     *
      * @param pattern the LayoutPattern to use
      */
     public void setLayout(LayoutPattern pattern) {
@@ -891,7 +970,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the current layout pattern.
-     * 
+     *
      * @return the current LayoutPattern
      */
     public LayoutPattern getLayoutPattern() {
@@ -902,7 +981,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Adds an event listener for GUI events.
-     * 
+     *
      * @param listener the GUIEventListener to add
      */
     public void addEventListener(GUIEventListener listener) {
@@ -913,7 +992,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Removes an event listener from the GUI.
-     * 
+     *
      * @param listener the GUIEventListener to remove
      */
     public void removeEventListener(GUIEventListener listener) {
@@ -922,7 +1001,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets all registered event listeners.
-     * 
+     *
      * @return a copy of the event listener list
      */
     public List<GUIEventListener> getEventListeners() {
@@ -940,7 +1019,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sets the theme for the GUI appearance.
-     * 
+     *
      * @param theme the GUITheme to apply
      */
     public void setTheme(GUITheme theme) {
@@ -951,7 +1030,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the current theme.
-     * 
+     *
      * @return the current GUITheme
      */
     public GUITheme getTheme() {
@@ -960,7 +1039,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Creates a dark theme with black glass panes.
-     * 
+     *
      * @return a new dark GUITheme
      */
     public static GUITheme createDarkTheme() {
@@ -978,7 +1057,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Creates a light theme with white glass panes.
-     * 
+     *
      * @return a new light GUITheme
      */
     public static GUITheme createLightTheme() {
@@ -998,7 +1077,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Enables or disables content caching for performance optimization.
-     * 
+     *
      * @param enable true to enable caching, false to disable
      */
     public void enableCache(boolean enable) {
@@ -1017,7 +1096,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if caching is currently enabled.
-     * 
+     *
      * @return true if caching is enabled, false otherwise
      */
     public boolean isCacheEnabled() {
@@ -1026,7 +1105,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the current cache size.
-     * 
+     *
      * @return the number of cached content variations
      */
     public int getCacheSize() {
@@ -1037,7 +1116,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the statistics object for this GUI.
-     * 
+     *
      * @return the GUIStatistics instance
      */
     public GUIStatistics getStatistics() {
@@ -1048,7 +1127,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the main content items.
-     * 
+     *
      * @return the list of content ItemStacks
      */
     public List<ItemStack> getItems() {
@@ -1057,7 +1136,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the number of items displayed per page.
-     * 
+     *
      * @return items per page count
      */
     public int getItemsPerPage() {
@@ -1067,25 +1146,25 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Sets the number of items per page.
      * This will recalculate pagination and may change the current page.
-     * 
+     *
      * @param itemsPerPage the new items per page count (must be positive)
      */
     public void setItemsPerPage(int itemsPerPage) {
         if (itemsPerPage > 0 && itemsPerPage != this.itemsPerPage) {
             int currentItemIndex = getCurrentPageStartIndex();
             this.itemsPerPage = itemsPerPage;
-            
+
             if (currentItemIndex > 0) {
                 this.currentPage = currentItemIndex / itemsPerPage;
             }
-            
+
             refreshContent();
         }
     }
 
     /**
      * Checks if the GUI has been initialized with content.
-     * 
+     *
      * @return true if initialized, false otherwise
      */
     public boolean isInitialized() {
@@ -1094,7 +1173,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if the GUI currently has any content items.
-     * 
+     *
      * @return true if there are items, false if empty
      */
     public boolean hasContent() {
@@ -1103,7 +1182,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets the total number of content items.
-     * 
+     *
      * @return the total item count
      */
     public int getTotalItemCount() {
@@ -1141,7 +1220,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Creates a formatted title with page information.
-     * 
+     *
      * @param baseTitle the base title text
      * @return formatted title with page info
      */
@@ -1185,7 +1264,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Opens the GUI for a player.
-     * 
+     *
      * @param player the player to open the GUI for
      */
     public void open(Player player) {
@@ -1198,7 +1277,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Closes the GUI for a player.
-     * 
+     *
      * @param player the player to close the GUI for
      */
     public void close(Player player) {
@@ -1213,7 +1292,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Removes a click handler for a specific slot.
-     * 
+     *
      * @param slot the slot index to remove the handler from
      */
     private void removeHandler(int slot) {
@@ -1275,7 +1354,8 @@ public class PaginatedGUI implements GUIBase {
             });
         } else {
             inventory.setItem(lastRowStart + 3, glassPane);
-            setItemHandler(lastRowStart + 3, ctx -> {});
+            setItemHandler(lastRowStart + 3, ctx -> {
+            });
         }
 
         if (currentPage < maxPage && nextButton != null) {
@@ -1287,7 +1367,8 @@ public class PaginatedGUI implements GUIBase {
             });
         } else {
             inventory.setItem(lastRowStart + 5, glassPane);
-            setItemHandler(lastRowStart + 5, ctx -> {});
+            setItemHandler(lastRowStart + 5, ctx -> {
+            });
         }
     }
 
@@ -1304,7 +1385,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Creates the default theme with gray glass panes and standard formatting.
-     * 
+     *
      * @return a new GUITheme with default settings
      */
     private GUITheme createDefaultTheme() {
@@ -1321,7 +1402,7 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Gets processed items after applying all filters, search queries, and sorting.
      * Uses caching to improve performance when the same processing has been done before.
-     * 
+     *
      * @return the processed list of ItemStacks ready for display
      */
     private List<ItemStack> getProcessedItems() {
@@ -1343,7 +1424,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Applies all registered filters to the item list.
-     * 
+     *
      * @param items the list of items to filter
      * @return a new list containing only items that pass all filters
      */
@@ -1372,7 +1453,7 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Applies search query filtering to the item list.
      * Filters based on item display name or material name.
-     * 
+     *
      * @param items the list of items to search through
      * @return a new list containing only items matching the search query
      */
@@ -1386,7 +1467,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if an item matches the current search query.
-     * 
+     *
      * @param item the ItemStack to test against the search query
      * @return true if the item matches the search, false otherwise
      */
@@ -1403,7 +1484,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Sorts the item list according to the current sort type and order.
-     * 
+     *
      * @param items the list of items to sort
      * @return a new sorted list of ItemStacks
      */
@@ -1436,7 +1517,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Generates a unique cache key based on current filter, sort, and search settings.
-     * 
+     *
      * @return a string key for caching processed content
      */
     private String getCacheKey() {
@@ -1445,7 +1526,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Retrieves cached content if caching is enabled and content exists.
-     * 
+     *
      * @return cached processed items, or null if not found or caching disabled
      */
     private List<ItemStack> getCachedContent() {
@@ -1455,7 +1536,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Stores processed content in the cache for future retrieval.
-     * 
+     *
      * @param content the processed content list to cache
      */
     private void setCachedContent(List<ItemStack> content) {
@@ -1486,8 +1567,8 @@ public class PaginatedGUI implements GUIBase {
     /**
      * Opens a specific page with the provided item list.
      * Handles page validation, content placement, and event firing.
-     * 
-     * @param page the page number to open (0-based)
+     *
+     * @param page      the page number to open (0-based)
      * @param itemsList the processed list of items to display
      */
     private void openPageWithItems(int page, List<ItemStack> itemsList) {
@@ -1539,8 +1620,8 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slot positions based on the specified layout pattern.
-     * 
-     * @param pattern the layout pattern to use
+     *
+     * @param pattern   the layout pattern to use
      * @param itemCount the number of items to place
      * @return an array of slot indices for item placement
      */
@@ -1565,9 +1646,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slots for grid layout (standard left-to-right, top-to-bottom filling).
-     * 
+     *
      * @param itemCount the number of items to place
-     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @param maxSlot   the maximum slot index (excluding navigation row)
      * @return an array of slot indices in grid order
      */
     private int[] getGridSlots(int itemCount, int maxSlot) {
@@ -1580,9 +1661,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slots for list layout (single column, centered vertically).
-     * 
+     *
      * @param itemCount the number of items to place
-     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @param maxSlot   the maximum slot index (excluding navigation row)
      * @return an array of slot indices in list order
      */
     private int[] getListSlots(int itemCount, int maxSlot) {
@@ -1599,9 +1680,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slots for centered layout (from center outward in spiral pattern).
-     * 
+     *
      * @param itemCount the number of items to place
-     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @param maxSlot   the maximum slot index (excluding navigation row)
      * @return an array of slot indices in centered order
      */
     private int[] getCenteredSlots(int itemCount, int maxSlot) {
@@ -1621,9 +1702,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slots for border layout (edges first, then inward).
-     * 
+     *
      * @param itemCount the number of items to place
-     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @param maxSlot   the maximum slot index (excluding navigation row)
      * @return an array of slot indices prioritizing border positions
      */
     private int[] getBorderSlots(int itemCount, int maxSlot) {
@@ -1643,9 +1724,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slots for checkerboard layout (alternating pattern like a chess board).
-     * 
+     *
      * @param itemCount the number of items to place
-     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @param maxSlot   the maximum slot index (excluding navigation row)
      * @return an array of slot indices in checkerboard pattern
      */
     private int[] getCheckerboardSlots(int itemCount, int maxSlot) {
@@ -1667,7 +1748,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fires page change events to all registered listeners.
-     * 
+     *
      * @param oldPage the previous page number
      * @param newPage the new current page number
      */
@@ -1683,9 +1764,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fires item click events to all registered listeners.
-     * 
-     * @param item the ItemStack that was clicked
-     * @param slot the slot number where the click occurred
+     *
+     * @param item      the ItemStack that was clicked
+     * @param slot      the slot number where the click occurred
      * @param clickType the type of click performed
      */
     private void fireItemClickEvent(ItemStack item, int slot, ClickType clickType) {
@@ -1700,7 +1781,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fires content change events to all registered listeners.
-     * 
+     *
      * @param oldItems the previous item list
      * @param newItems the new item list
      */
@@ -1716,7 +1797,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fires GUI open events to all registered listeners.
-     * 
+     *
      * @param player the player who opened the GUI
      */
     private void fireGUIOpenEvent(Player player) {
@@ -1731,7 +1812,7 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Fires GUI close events to all registered listeners.
-     * 
+     *
      * @param player the player who closed the GUI
      */
     private void fireGUICloseEvent(Player player) {

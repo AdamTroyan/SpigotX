@@ -17,12 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Event listener for GUI inventory interactions in Bukkit/Spigot plugins.
- * 
+ * <p>
  * This listener handles all inventory-related events for custom GUIs, providing
  * click protection, spam prevention, and proper event management. It automatically
  * manages player data cleanup and provides comprehensive event handling for all
  * GUI implementations that extend the GUIBase interface.
- * 
+ *
  * <p>Key features:</p>
  * <ul>
  *   <li>Automatic registration and management</li>
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Debug logging for troubleshooting</li>
  *   <li>Statistics tracking for monitoring</li>
  * </ul>
- * 
+ *
  * <p>The listener automatically prevents:</p>
  * <ul>
  *   <li>Item dragging in GUI inventories</li>
@@ -42,29 +42,41 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Creative mode inventory interactions</li>
  *   <li>Excessive clicking (spam protection)</li>
  * </ul>
- * 
+ *
  * @author Adam
  * @version 1.0
  * @since 1.0
  */
 public class GUIListener implements Listener {
-    
-    /** Whether the listener has been registered with Bukkit */
+
+    /**
+     * Whether the listener has been registered with Bukkit
+     */
     private static boolean registered = false;
-    
-    /** Map of player UUIDs to their last click timestamp for cooldown tracking */
+
+    /**
+     * Map of player UUIDs to their last click timestamp for cooldown tracking
+     */
     private static final Map<UUID, Long> lastClickTime = new ConcurrentHashMap<>();
-    
-    /** Map of player UUIDs to their current click count for rate limiting */
+
+    /**
+     * Map of player UUIDs to their current click count for rate limiting
+     */
     private static final Map<UUID, Integer> clickCounts = new ConcurrentHashMap<>();
-    
-    /** Minimum time between clicks in milliseconds */
+
+    /**
+     * Minimum time between clicks in milliseconds
+     */
     private static long clickCooldown = 50;
-    
-    /** Maximum clicks allowed per second per player */
+
+    /**
+     * Maximum clicks allowed per second per player
+     */
     private static int maxClicksPerSecond = 20;
-    
-    /** Whether debug logging is enabled */
+
+    /**
+     * Whether debug logging is enabled
+     */
     private static boolean debugMode = false;
 
     // === LISTENER REGISTRATION ===
@@ -85,7 +97,7 @@ public class GUIListener implements Listener {
 
     /**
      * Checks if the listener is currently registered.
-     * 
+     *
      * @return true if registered, false otherwise
      */
     public static boolean isRegistered() {
@@ -96,7 +108,7 @@ public class GUIListener implements Listener {
 
     /**
      * Sets the minimum time between clicks for spam protection.
-     * 
+     *
      * @param cooldownMs the cooldown time in milliseconds (minimum 10ms)
      */
     public static void setClickCooldown(long cooldownMs) {
@@ -106,7 +118,7 @@ public class GUIListener implements Listener {
 
     /**
      * Sets the maximum number of clicks allowed per second per player.
-     * 
+     *
      * @param maxClicks the maximum clicks per second (minimum 1, maximum 100)
      */
     public static void setMaxClicksPerSecond(int maxClicks) {
@@ -117,7 +129,7 @@ public class GUIListener implements Listener {
     /**
      * Enables or disables debug logging for the listener.
      * Debug logs provide detailed information about event processing.
-     * 
+     *
      * @param debug true to enable debug logging, false to disable
      */
     public static void setDebugMode(boolean debug) {
@@ -127,7 +139,7 @@ public class GUIListener implements Listener {
 
     /**
      * Gets the current click cooldown setting.
-     * 
+     *
      * @return the cooldown time in milliseconds
      */
     public static long getClickCooldown() {
@@ -136,7 +148,7 @@ public class GUIListener implements Listener {
 
     /**
      * Gets the current maximum clicks per second setting.
-     * 
+     *
      * @return the maximum clicks per second
      */
     public static int getMaxClicksPerSecond() {
@@ -145,7 +157,7 @@ public class GUIListener implements Listener {
 
     /**
      * Checks if debug mode is currently enabled.
-     * 
+     *
      * @return true if debug mode is enabled, false otherwise
      */
     public static boolean isDebugMode() {
@@ -155,8 +167,7 @@ public class GUIListener implements Listener {
     // === EVENT HANDLERS ===
 
     /**
-     * Handles inventory click events for GUI inventories.
-     * Processes click spam protection, validates the click, and delegates to the appropriate GUI handler.
+     * @param event the inventory click event
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
@@ -204,7 +215,7 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles inventory drag events to prevent item dragging in GUI inventories.
+     * @param event the inventory drag event
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryDrag(InventoryDragEvent event) {
@@ -215,7 +226,7 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles inventory move events to prevent item movement between inventories.
+     * @param event the inventory move item event
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryMove(InventoryMoveItemEvent event) {
@@ -226,7 +237,7 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles inventory close events to clean up player data and notify the GUI.
+     * @param event the inventory close event
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClose(InventoryCloseEvent event) {
@@ -255,7 +266,7 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles inventory open events to reset player click tracking.
+     * @param event the inventory open event
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryOpen(InventoryOpenEvent event) {
@@ -273,7 +284,7 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles creative mode inventory events to prevent creative interactions with GUIs.
+     * @param event the inventory creative event
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryCreative(InventoryCreativeEvent event) {
@@ -284,7 +295,7 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles player quit events to clean up tracking data.
+     * @param event the player quit event
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -297,14 +308,14 @@ public class GUIListener implements Listener {
     }
 
     /**
-     * Handles plugin disable events to clean up all data when the plugin shuts down.
+     * @param event the plugin disable event
      */
     @EventHandler
     public void onPluginDisable(PluginDisableEvent event) {
         if (event.getPlugin().equals(SpigotX.getPlugin())) {
             lastClickTime.clear();
             clickCounts.clear();
-            
+
             GUIUpdater.cancelAll();
 
             logDebug("Plugin disabled - cleaned up all GUI data");
@@ -315,7 +326,7 @@ public class GUIListener implements Listener {
 
     /**
      * Checks if an inventory belongs to one of our custom GUIs.
-     * 
+     *
      * @param inv the inventory to check
      * @return true if the inventory is a custom GUI, false otherwise
      */
@@ -326,7 +337,7 @@ public class GUIListener implements Listener {
     /**
      * Checks if a player is allowed to click based on spam protection rules.
      * Applies both cooldown and rate limiting checks.
-     * 
+     *
      * @param player the player attempting to click
      * @return true if the click is allowed, false if blocked
      */
@@ -364,7 +375,7 @@ public class GUIListener implements Listener {
 
     /**
      * Gets the number of players currently being tracked for click protection.
-     * 
+     *
      * @return the number of tracked players
      */
     public static int getTrackedPlayerCount() {
@@ -373,7 +384,7 @@ public class GUIListener implements Listener {
 
     /**
      * Gets the number of players with active click counts.
-     * 
+     *
      * @return the number of players with recent clicks
      */
     public static int getActiveClickerCount() {
@@ -407,7 +418,7 @@ public class GUIListener implements Listener {
 
     /**
      * Gets the last click time for a specific player.
-     * 
+     *
      * @param playerId the player's UUID
      * @return the last click timestamp, or null if not found
      */
@@ -417,7 +428,7 @@ public class GUIListener implements Listener {
 
     /**
      * Gets the current click count for a specific player.
-     * 
+     *
      * @param playerId the player's UUID
      * @return the current click count, or 0 if not found
      */
@@ -427,7 +438,7 @@ public class GUIListener implements Listener {
 
     /**
      * Checks if a player is currently being tracked for spam protection.
-     * 
+     *
      * @param playerId the player's UUID
      * @return true if the player is being tracked, false otherwise
      */
@@ -439,7 +450,7 @@ public class GUIListener implements Listener {
 
     /**
      * Logs debug messages when debug mode is enabled.
-     * 
+     *
      * @param message the message to log
      */
     private static void logDebug(String message) {
@@ -450,9 +461,9 @@ public class GUIListener implements Listener {
 
     /**
      * Logs error messages to the console with optional exception details.
-     * 
+     *
      * @param message the error message
-     * @param e the exception that occurred (can be null)
+     * @param e       the exception that occurred (can be null)
      */
     private static void logError(String message, Exception e) {
         System.err.println("[GUIListener ERROR] " + message);

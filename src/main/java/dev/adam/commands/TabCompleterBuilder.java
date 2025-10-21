@@ -24,9 +24,13 @@ public class TabCompleterBuilder {
     private Predicate<CommandSender> globalFilter;
 
     // === BASIC ARG METHODS ===
-    
+
     /**
-     * Sets completions for a specific argument index using a function.
+     * Sets tab completion for a specific argument index using a dynamic function.
+     *
+     * @param index      the argument index (0-based)
+     * @param completion function that generates completion suggestions
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder arg(int index, Function<CommandSender, List<String>> completion) {
         if (index >= 0 && completion != null) {
@@ -36,14 +40,22 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets static completions for a specific argument index.
+     * Sets tab completion for a specific argument index using a static list.
+     *
+     * @param index  the argument index (0-based)
+     * @param values the static list of completion suggestions
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder arg(int index, List<String> values) {
         return arg(index, sender -> values != null ? new ArrayList<>(values) : Collections.emptyList());
     }
 
     /**
-     * Sets static completions for a specific argument index.
+     * Sets tab completion for a specific argument index using static values.
+     *
+     * @param index  the argument index (0-based)
+     * @param values the static array of completion suggestions
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder arg(int index, String... values) {
         return arg(index, values != null ? Arrays.asList(values) : Collections.emptyList());
@@ -52,7 +64,10 @@ public class TabCompleterBuilder {
     // === PREDEFINED COMPLETIONS ===
 
     /**
-     * Sets online player names as completions.
+     * Sets tab completion to show online player names for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder players(int index) {
         return arg(index, sender -> Bukkit.getOnlinePlayers().stream()
@@ -62,7 +77,11 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets players with specific permission as completions.
+     * Sets tab completion to show players with a specific permission.
+     *
+     * @param index      the argument index (0-based)
+     * @param permission the required permission
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder playersWithPermission(int index, String permission) {
         return arg(index, sender -> Bukkit.getOnlinePlayers().stream()
@@ -73,7 +92,10 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets world names as completions.
+     * Sets tab completion to show world names for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder worlds(int index) {
         return arg(index, sender -> Bukkit.getWorlds().stream()
@@ -83,7 +105,10 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets material names as completions.
+     * Sets tab completion to show material names for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder materials(int index) {
         return arg(index, sender -> Arrays.stream(Material.values())
@@ -94,7 +119,10 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets plugin names as completions.
+     * Sets tab completion to show plugin names for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder plugins(int index) {
         return arg(index, sender -> Arrays.stream(Bukkit.getPluginManager().getPlugins())
@@ -104,7 +132,12 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets a range of numbers as completions.
+     * Sets tab completion to show numbers in a range for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @param min   the minimum number (inclusive)
+     * @param max   the maximum number (inclusive)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder numbers(int index, int min, int max) {
         List<String> numbers = new ArrayList<>();
@@ -115,14 +148,20 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets boolean values as completions.
+     * Sets tab completion to show boolean values for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder booleans(int index) {
         return arg(index, "true", "false");
     }
 
     /**
-     * Sets game mode names as completions.
+     * Sets tab completion to show game mode names for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder gamemodes(int index) {
         return arg(index, Arrays.stream(GameMode.values())
@@ -131,7 +170,10 @@ public class TabCompleterBuilder {
     }
 
     /**
-     * Sets difficulty names as completions.
+     * Sets tab completion to show difficulty names for the specified argument.
+     *
+     * @param index the argument index (0-based)
+     * @return this builder instance for chaining
      */
     public TabCompleterBuilder difficulties(int index) {
         return arg(index, "peaceful", "easy", "normal", "hard");
@@ -143,10 +185,10 @@ public class TabCompleterBuilder {
      * Sets conditional completions based on current arguments.
      */
     public TabCompleterBuilder conditional(int index, BiFunction<CommandSender, String[], Boolean> condition,
-                                         Function<CommandSender, List<String>> completion) {
+                                           Function<CommandSender, List<String>> completion) {
         if (index >= 0 && condition != null && completion != null) {
-            conditionalCompletions.put(index, (sender, args) -> 
-                condition.apply(sender, args) ? completion.apply(sender) : Collections.emptyList());
+            conditionalCompletions.put(index, (sender, args) ->
+                    condition.apply(sender, args) ? completion.apply(sender) : Collections.emptyList());
         }
         return this;
     }
@@ -239,7 +281,7 @@ public class TabCompleterBuilder {
     private List<String> complete(CommandSender sender, String[] args) {
         try {
             int argIndex = args.length - 1;
-            
+
             // Check conditional completions first
             if (argIndex >= 0 && conditionalCompletions.containsKey(argIndex)) {
                 List<String> conditionalResult = conditionalCompletions.get(argIndex).apply(sender, args);
@@ -247,7 +289,7 @@ public class TabCompleterBuilder {
                     return filterCompletions(conditionalResult, args);
                 }
             }
-            
+
             // Check regular argument completions
             if (argIndex >= 0 && argCompletions.containsKey(argIndex)) {
                 List<String> completions = argCompletions.get(argIndex).apply(sender);

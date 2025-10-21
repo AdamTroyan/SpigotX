@@ -12,12 +12,12 @@ import java.util.function.Predicate;
 
 /**
  * Fluent builder pattern implementation for creating GUI inventories.
- * 
+ * <p>
  * This builder provides a comprehensive and intuitive way to construct GUI inventories
  * with advanced features like templates, patterns, conditional placement, and validation.
  * It supports method chaining for clean and readable code, along with powerful
  * customization options for creating professional inventory interfaces.
- * 
+ *
  * <p>Key features:</p>
  * <ul>
  *   <li>Fluent API with method chaining for clean code</li>
@@ -30,7 +30,7 @@ import java.util.function.Predicate;
  *   <li>Build-time validation and debugging tools</li>
  *   <li>Quick helper methods for common operations</li>
  * </ul>
- * 
+ *
  * <p>Example usage:</p>
  * <pre>{@code
  * GUI gui = new GUIBuilder("My Shop", 6)
@@ -42,31 +42,49 @@ import java.util.function.Predicate;
  *     .fillBorder(GUI.createItem(Material.BLACK_STAINED_GLASS_PANE, " "), null)
  *     .build();
  * }</pre>
- * 
+ *
  * @author Adam
  * @version 1.0
  * @since 1.0
  */
 public class GUIBuilder implements GUIBase {
-    
-    /** The underlying GUI being built */
+
+    /**
+     * The underlying GUI being built
+     */
     private final GUI gui;
-    /** Map of slot permissions for access control */
+    /**
+     * Map of slot permissions for access control
+     */
     private final Map<Integer, String> slotPermissions = new HashMap<>();
-    /** Named handlers for reusable click actions */
+    /**
+     * Named handlers for reusable click actions
+     */
     private final Map<String, Consumer<GUIClickContext>> namedHandlers = new HashMap<>();
-    /** Build steps to execute at build time */
+    /**
+     * Build steps to execute at build time
+     */
     private final List<BuildStep> buildSteps = new ArrayList<>();
-    /** Set of applied template names to prevent duplicates */
+    /**
+     * Set of applied template names to prevent duplicates
+     */
     private final Set<String> appliedTemplates = new HashSet<>();
 
-    /** Whether to validate items during building */
+    /**
+     * Whether to validate items during building
+     */
     private boolean validateItems = true;
-    /** Whether to automatically fill background with glass panes */
+    /**
+     * Whether to automatically fill background with glass panes
+     */
     private boolean autoFillBackground = false;
-    /** Default background item for auto-fill */
+    /**
+     * Default background item for auto-fill
+     */
     private ItemStack defaultBackground;
-    /** Name of the builder for debugging purposes */
+    /**
+     * Name of the builder for debugging purposes
+     */
     private String builderName = "UnnamedGUI";
 
     /**
@@ -77,7 +95,7 @@ public class GUIBuilder implements GUIBase {
     public interface BuildStep {
         /**
          * Applies the build step to the given builder.
-         * 
+         *
          * @param builder the GUIBuilder to apply the step to
          */
         void apply(GUIBuilder builder);
@@ -88,20 +106,30 @@ public class GUIBuilder implements GUIBase {
      * Templates can contain items, handlers, properties, and post-apply logic.
      */
     public static class GUITemplate {
-        /** Unique name of the template */
+        /**
+         * Unique name of the template
+         */
         private final String name;
-        /** Items to place when applying the template */
+        /**
+         * Items to place when applying the template
+         */
         private final Map<Integer, ItemStack> items = new HashMap<>();
-        /** Click handlers to register when applying the template */
+        /**
+         * Click handlers to register when applying the template
+         */
         private final Map<Integer, Consumer<GUIClickContext>> handlers = new HashMap<>();
-        /** Properties to set when applying the template */
+        /**
+         * Properties to set when applying the template
+         */
         private final Map<String, Object> properties = new HashMap<>();
-        /** Optional post-apply logic */
+        /**
+         * Optional post-apply logic
+         */
         private Consumer<GUIBuilder> postApply;
 
         /**
          * Creates a new template with the specified name.
-         * 
+         *
          * @param name the unique name for this template
          */
         public GUITemplate(String name) {
@@ -110,9 +138,9 @@ public class GUIBuilder implements GUIBase {
 
         /**
          * Adds an item and handler to the template.
-         * 
-         * @param slot the slot position for the item
-         * @param item the ItemStack to place
+         *
+         * @param slot    the slot position for the item
+         * @param item    the ItemStack to place
          * @param handler the click handler (can be null)
          * @return this template for method chaining
          */
@@ -124,8 +152,8 @@ public class GUIBuilder implements GUIBase {
 
         /**
          * Sets a property that will be applied to the GUI.
-         * 
-         * @param key the property key
+         *
+         * @param key   the property key
          * @param value the property value
          * @return this template for method chaining
          */
@@ -136,7 +164,7 @@ public class GUIBuilder implements GUIBase {
 
         /**
          * Sets custom logic to execute after the template is applied.
-         * 
+         *
          * @param postApply the logic to execute
          * @return this template for method chaining
          */
@@ -145,25 +173,49 @@ public class GUIBuilder implements GUIBase {
             return this;
         }
 
-        /** Gets the template name */
-        public String getName() { return name; }
-        /** Gets the template items */
-        public Map<Integer, ItemStack> getItems() { return items; }
-        /** Gets the template handlers */
-        public Map<Integer, Consumer<GUIClickContext>> getHandlers() { return handlers; }
-        /** Gets the template properties */
-        public Map<String, Object> getProperties() { return properties; }
-        /** Gets the post-apply logic */
-        public Consumer<GUIBuilder> getPostApply() { return postApply; }
+        /**
+         * @return the GUI name
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * @return the items map
+         */
+        public Map<Integer, ItemStack> getItems() {
+            return items;
+        }
+
+        /**
+         * @return the handlers map
+         */
+        public Map<Integer, Consumer<GUIClickContext>> getHandlers() {
+            return handlers;
+        }
+
+        /**
+         * @return the properties map
+         */
+        public Map<String, Object> getProperties() {
+            return properties;
+        }
+
+        /**
+         * @return the post apply consumer
+         */
+        public Consumer<GUIBuilder> getPostApply() {
+            return postApply;
+        }
     }
 
     // === CONSTRUCTOR ===
 
     /**
      * Creates a new GUIBuilder with the specified title and number of rows.
-     * 
+     *
      * @param title the title displayed at the top of the inventory
-     * @param rows the number of rows in the inventory (1-6)
+     * @param rows  the number of rows in the inventory (1-6)
      */
     public GUIBuilder(String title, int rows) {
         this.gui = new GUI(title, rows);
@@ -175,9 +227,9 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets an item at the specified slot with a click handler.
-     * 
-     * @param slot the slot position (0-based)
-     * @param item the ItemStack to place
+     *
+     * @param slot    the slot position (0-based)
+     * @param item    the ItemStack to place
      * @param handler the click handler for this item
      * @return this builder for method chaining
      */
@@ -187,17 +239,17 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets an item at the specified slot with permission requirement and click handler.
-     * 
-     * @param slot the slot position (0-based)
-     * @param item the ItemStack to place
+     *
+     * @param slot       the slot position (0-based)
+     * @param item       the ItemStack to place
      * @param permission the permission required to click this item (null for no requirement)
-     * @param handler the click handler for this item
+     * @param handler    the click handler for this item
      * @return this builder for method chaining
      * @throws IllegalArgumentException if item validation fails
      */
     public GUIBuilder setItem(int slot, ItemStack item, String permission, Consumer<GUIClickContext> handler) {
-        if (validateItems && item != null && item.hasItemMeta() && 
-            item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().trim().isEmpty()) {
+        if (validateItems && item != null && item.hasItemMeta() &&
+                item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().trim().isEmpty()) {
             throw new IllegalArgumentException("Item at slot " + slot + " must have a non-empty display name when validation is enabled!");
         }
 
@@ -211,11 +263,11 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Conditionally sets an item based on a boolean condition.
-     * 
+     *
      * @param condition whether to place the item
-     * @param slot the slot position
-     * @param item the ItemStack to place
-     * @param handler the click handler
+     * @param slot      the slot position
+     * @param item      the ItemStack to place
+     * @param handler   the click handler
      * @return this builder for method chaining
      */
     public GUIBuilder setItemIf(boolean condition, int slot, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -227,11 +279,11 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Conditionally sets an item based on a predicate.
-     * 
+     *
      * @param condition the predicate to test against this builder
-     * @param slot the slot position
-     * @param item the ItemStack to place
-     * @param handler the click handler
+     * @param slot      the slot position
+     * @param item      the ItemStack to place
+     * @param handler   the click handler
      * @return this builder for method chaining
      */
     public GUIBuilder setItemIf(Predicate<GUIBuilder> condition, int slot, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -243,9 +295,9 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets multiple items at different slots with the same item and handler.
-     * 
-     * @param slots array of slot positions
-     * @param item the ItemStack to place in all slots
+     *
+     * @param slots   array of slot positions
+     * @param item    the ItemStack to place in all slots
      * @param handler the click handler for all items
      * @return this builder for method chaining
      */
@@ -259,7 +311,7 @@ public class GUIBuilder implements GUIBase {
     /**
      * Removes an item from the specified slot.
      * Also removes any associated permission requirement.
-     * 
+     *
      * @param slot the slot to clear
      */
     public void removeItem(int slot) {
@@ -271,8 +323,8 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Registers a named handler that can be reused across multiple items.
-     * 
-     * @param name the unique name for the handler
+     *
+     * @param name    the unique name for the handler
      * @param handler the click handler to register
      * @return this builder for method chaining
      */
@@ -283,9 +335,9 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets an item using a previously registered named handler.
-     * 
-     * @param slot the slot position
-     * @param item the ItemStack to place
+     *
+     * @param slot        the slot position
+     * @param item        the ItemStack to place
      * @param handlerName the name of the registered handler
      * @return this builder for method chaining
      * @throws IllegalArgumentException if the handler name is not found
@@ -303,13 +355,13 @@ public class GUIBuilder implements GUIBase {
     /**
      * Applies items to the GUI based on an ASCII pattern.
      * Each character in the pattern corresponds to a different item type.
-     * 
-     * @param pattern array of strings representing rows of the inventory
-     * @param items map of characters to ItemStacks
+     *
+     * @param pattern  array of strings representing rows of the inventory
+     * @param items    map of characters to ItemStacks
      * @param handlers map of characters to click handlers (can be null)
      * @return this builder for method chaining
      */
-    public GUIBuilder applyPattern(String[] pattern, Map<Character, ItemStack> items, 
+    public GUIBuilder applyPattern(String[] pattern, Map<Character, ItemStack> items,
                                    Map<Character, Consumer<GUIClickContext>> handlers) {
         int slot = 0;
         for (String row : pattern) {
@@ -334,11 +386,11 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Fills a rectangular area with the specified item.
-     * 
-     * @param topLeft the top-left slot of the area
+     *
+     * @param topLeft     the top-left slot of the area
      * @param bottomRight the bottom-right slot of the area
-     * @param item the ItemStack to place
-     * @param handler the click handler for all items
+     * @param item        the ItemStack to place
+     * @param handler     the click handler for all items
      * @return this builder for method chaining
      */
     public GUIBuilder fillArea(int topLeft, int bottomRight, ItemStack item, Consumer<GUIClickContext> handler) {
@@ -360,10 +412,10 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Fills a circular area around a center point.
-     * 
-     * @param center the center slot position
-     * @param radius the radius of the circle
-     * @param item the ItemStack to place
+     *
+     * @param center  the center slot position
+     * @param radius  the radius of the circle
+     * @param item    the ItemStack to place
      * @param handler the click handler for all items
      * @return this builder for method chaining
      */
@@ -385,10 +437,10 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Fills a diamond shape around a center point using Manhattan distance.
-     * 
-     * @param center the center slot position
-     * @param radius the radius of the diamond
-     * @param item the ItemStack to place
+     *
+     * @param center  the center slot position
+     * @param radius  the radius of the diamond
+     * @param item    the ItemStack to place
      * @param handler the click handler for all items
      * @return this builder for method chaining
      */
@@ -410,14 +462,14 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Fills the inventory in a checkerboard pattern with alternating items.
-     * 
-     * @param item1 the first item type
-     * @param item2 the second item type
+     *
+     * @param item1    the first item type
+     * @param item2    the second item type
      * @param handler1 the click handler for item1
      * @param handler2 the click handler for item2
      * @return this builder for method chaining
      */
-    public GUIBuilder fillCheckered(ItemStack item1, ItemStack item2, 
+    public GUIBuilder fillCheckered(ItemStack item1, ItemStack item2,
                                     Consumer<GUIClickContext> handler1, Consumer<GUIClickContext> handler2) {
         for (int slot = 0; slot < gui.getSlotCount(); slot++) {
             int row = slot / 9;
@@ -434,8 +486,8 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Fills the border (edges) of the inventory with the specified item.
-     * 
-     * @param item the ItemStack to place on the border
+     *
+     * @param item    the ItemStack to place on the border
      * @param handler the click handler for border items
      * @return this builder for method chaining
      */
@@ -449,7 +501,7 @@ public class GUIBuilder implements GUIBase {
     /**
      * Applies a template to the GUI.
      * Templates are applied only once to prevent conflicts.
-     * 
+     *
      * @param template the GUITemplate to apply
      * @return this builder for method chaining
      */
@@ -482,7 +534,7 @@ public class GUIBuilder implements GUIBase {
     /**
      * Adds a build step to be executed at build time.
      * Build steps allow for complex or deferred building logic.
-     * 
+     *
      * @param step the BuildStep to add
      * @return this builder for method chaining
      */
@@ -494,7 +546,7 @@ public class GUIBuilder implements GUIBase {
     /**
      * Executes all pending build steps and clears the list.
      * This is automatically called during build().
-     * 
+     *
      * @return this builder for method chaining
      */
     public GUIBuilder executeBuildSteps() {
@@ -509,12 +561,12 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Quick method to create and place an item with name and lore.
-     * 
-     * @param slot the slot position
+     *
+     * @param slot     the slot position
      * @param material the material type
-     * @param name the display name
-     * @param handler the click handler
-     * @param lore optional lore lines
+     * @param name     the display name
+     * @param handler  the click handler
+     * @param lore     optional lore lines
      * @return this builder for method chaining
      */
     public GUIBuilder quickItem(int slot, Material material, String name, Consumer<GUIClickContext> handler, String... lore) {
@@ -524,12 +576,12 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Quick method to create a button that plays a click sound.
-     * 
-     * @param slot the slot position
+     *
+     * @param slot     the slot position
      * @param material the material type
-     * @param name the display name
-     * @param action the action to execute on click
-     * @param lore optional lore lines
+     * @param name     the display name
+     * @param action   the action to execute on click
+     * @param lore     optional lore lines
      * @return this builder for method chaining
      */
     public GUIBuilder quickButton(int slot, Material material, String name, Runnable action, String... lore) {
@@ -541,11 +593,11 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Quick method to create a close button that closes the inventory.
-     * 
-     * @param slot the slot position
+     *
+     * @param slot     the slot position
      * @param material the material type
-     * @param name the display name
-     * @param lore optional lore lines
+     * @param name     the display name
+     * @param lore     optional lore lines
      * @return this builder for method chaining
      */
     public GUIBuilder quickCloseButton(int slot, Material material, String name, String... lore) {
@@ -558,7 +610,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets whether items should be validated during building.
-     * 
+     *
      * @param validate true to enable validation, false to disable
      * @return this builder for method chaining
      */
@@ -569,7 +621,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets whether to automatically fill empty slots with background items.
-     * 
+     *
      * @param autoFill true to enable auto-fill, false to disable
      * @return this builder for method chaining
      */
@@ -580,7 +632,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets the default background item for auto-fill.
-     * 
+     *
      * @param background the ItemStack to use as background
      * @return this builder for method chaining
      */
@@ -591,7 +643,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets the name of this builder for debugging purposes.
-     * 
+     *
      * @param name the name to assign
      * @return this builder for method chaining
      */
@@ -604,7 +656,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets a condition that must be met for players to open this GUI.
-     * 
+     *
      * @param condition the predicate to test against players
      * @return this builder for method chaining
      */
@@ -615,7 +667,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets an action to execute when the GUI is opened.
-     * 
+     *
      * @param onOpen the action to execute
      * @return this builder for method chaining
      */
@@ -626,7 +678,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets an action to execute when the GUI is closed.
-     * 
+     *
      * @param onClose the action to execute
      * @return this builder for method chaining
      */
@@ -637,8 +689,8 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Sets a property on the underlying GUI.
-     * 
-     * @param key the property key
+     *
+     * @param key   the property key
      * @param value the property value
      * @return this builder for method chaining
      */
@@ -649,9 +701,9 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Gets a property from the underlying GUI.
-     * 
-     * @param <T> the expected type of the property
-     * @param key the property key
+     *
+     * @param <T>  the expected type of the property
+     * @param key  the property key
      * @param type the expected class of the property
      * @return the property value, or null if not found
      */
@@ -664,7 +716,7 @@ public class GUIBuilder implements GUIBase {
     /**
      * Validates the current state of the GUI.
      * Checks for common issues like items without display names.
-     * 
+     *
      * @return true if validation passes, false otherwise
      */
     public boolean validate() {
@@ -673,8 +725,8 @@ public class GUIBuilder implements GUIBase {
         for (int slot = 0; slot < gui.getSlotCount(); slot++) {
             ItemStack item = gui.getInventory().getItem(slot);
             if (item != null && !item.getType().isAir()) {
-                if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName() || 
-                    item.getItemMeta().getDisplayName().trim().isEmpty()) {
+                if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName() ||
+                        item.getItemMeta().getDisplayName().trim().isEmpty()) {
                     System.err.println("Warning: Item at slot " + slot + " in GUI '" + builderName + "' has no display name!");
                     return false;
                 }
@@ -706,7 +758,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Opens the GUI for a player after applying all build steps and validation.
-     * 
+     *
      * @param player the player to open the GUI for
      */
     public void open(Player player) {
@@ -720,7 +772,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Builds and returns the final GUI after applying all build steps and validation.
-     * 
+     *
      * @return the completed GUI instance
      */
     public GUI build() {
@@ -736,7 +788,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Creates a basic template with gray glass pane background.
-     * 
+     *
      * @return a new basic GUITemplate
      */
     public static GUITemplate createBasicTemplate() {
@@ -748,7 +800,7 @@ public class GUIBuilder implements GUIBase {
     /**
      * Creates a navigation template with previous, next, and close buttons.
      * Designed for 6-row inventories with navigation in the bottom row.
-     * 
+     *
      * @return a new navigation GUITemplate
      */
     public static GUITemplate createNavigationTemplate() {
@@ -803,7 +855,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Gets the name of this builder.
-     * 
+     *
      * @return the builder name
      */
     public String getBuilderName() {
@@ -812,7 +864,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Checks if item validation is enabled.
-     * 
+     *
      * @return true if validation is enabled, false otherwise
      */
     public boolean isValidateItems() {
@@ -821,7 +873,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Checks if auto-fill background is enabled.
-     * 
+     *
      * @return true if auto-fill is enabled, false otherwise
      */
     public boolean isAutoFillBackground() {
@@ -830,7 +882,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Gets the default background item.
-     * 
+     *
      * @return the default background ItemStack
      */
     public ItemStack getDefaultBackground() {
@@ -839,7 +891,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Gets a copy of the set of applied template names.
-     * 
+     *
      * @return a new set containing applied template names
      */
     public Set<String> getAppliedTemplates() {
@@ -848,7 +900,7 @@ public class GUIBuilder implements GUIBase {
 
     /**
      * Gets the underlying GUI instance.
-     * 
+     *
      * @return the GUI being built
      */
     public GUI getGUI() {
