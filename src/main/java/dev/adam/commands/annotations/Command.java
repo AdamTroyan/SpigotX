@@ -6,10 +6,8 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface Command {
     String name();
-
     String description() default "";
-
     String permission() default "";
-
     String usage() default "";
+    boolean async() default false;
 }

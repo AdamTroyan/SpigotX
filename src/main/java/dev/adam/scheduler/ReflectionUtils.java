@@ -1,4 +1,4 @@
-package dev.adam.utils;
+package dev.adam.scheduler;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

@@ -1,32 +1,93 @@
 package dev.adam.events;
 
 import org.bukkit.Bukkit;
-import org.bukkit.event.Event;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
+/**
+ * Utility class for simplified event handling in Bukkit plugins.
+ * 
+ * This class provides a fluent API for registering event listeners with various
+ * conditions and behaviors, eliminating the need for traditional listener classes
+ * in many cases. It also includes tracking and cleanup functionality.
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Simple event registration with lambda handlers</li>
+ *   <li>Conditional event listeners</li>
+ *   <li>Limited execution listeners (once, times, timeout)</li>
+ *   <li>Automatic listener tracking and cleanup</li>
+ *   <li>Plugin-based listener management</li>
+ * </ul>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Listen to player join events
+ * EventUtil.listen(plugin, PlayerJoinEvent.class, event -> {
+ *     event.getPlayer().sendMessage("Welcome!");
+ * });
+ * 
+ * // Listen only once
+ * EventUtil.listenOnce(plugin, ServerLoadEvent.class, event -> {
+ *     plugin.getLogger().info("Server loaded!");
+ * });
+ * 
+ * // Conditional listening
+ * EventUtil.listenIf(plugin, PlayerChatEvent.class, 
+ *     event -> event.getPlayer().sendMessage("Nice message!"),
+ *     event -> event.getMessage().contains("hello")
+ * );
+ * }</pre>
+ * 
+ * @author Adam
+ * @version 1.0
+ * @since 1.0
+ */
 public class EventUtil {
+    
+    /** Map tracking listeners per plugin for cleanup purposes */
     private static final Map<Plugin, Set<Listener>> pluginListeners = new ConcurrentHashMap<>();
-    private static final Map<Listener, Set<Class<? extends Event>>> listenerEvents = new ConcurrentHashMap<>();
+    
+    /** Map tracking scheduled tasks for timeout listeners */
+    private static final Map<Listener, BukkitTask> timeoutTasks = new ConcurrentHashMap<>();
 
-    private static final Map<Class<? extends Event>, Integer> eventCounts = new ConcurrentHashMap<>();
-    private static final Map<Class<? extends Event>, Long> eventTimes = new ConcurrentHashMap<>();
+    // === BASIC EVENT REGISTRATION ===
 
+    /**
+     * Registers an event listener with normal priority.
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @return the registered Listener instance, or null if parameters are invalid
+     */
     public static <T extends Event> Listener listen(Plugin plugin, Class<T> eventClass, Consumer<T> handler) {
         return listen(plugin, eventClass, handler, EventPriority.NORMAL);
     }
 
+    /**
+     * Registers an event listener with specified priority.
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @param priority the event priority
+     * @return the registered Listener instance, or null if parameters are invalid
+     */
     public static <T extends Event> Listener listen(Plugin plugin, Class<T> eventClass, Consumer<T> handler, EventPriority priority) {
-        if (plugin == null || eventClass == null || handler == null) return null;
+        if (plugin == null || eventClass == null || handler == null) {
+            return null;
+        }
 
-        Listener listener = new Listener() {
-        };
+        Listener listener = new Listener() {};
 
         Bukkit.getPluginManager().registerEvent(
                 eventClass,
@@ -35,28 +96,32 @@ public class EventUtil {
                 (l, event) -> {
                     if (eventClass.isInstance(event)) {
                         try {
-                            long startTime = System.nanoTime();
                             handler.accept(eventClass.cast(event));
-
-                            long duration = System.nanoTime() - startTime;
-                            eventCounts.merge(eventClass, 1, Integer::sum);
-                            eventTimes.merge(eventClass, duration, Long::sum);
-
                         } catch (Exception e) {
-                            System.err.println("Error handling event " + eventClass.getSimpleName() + ": " + e.getMessage());
-                            e.printStackTrace();
+                            plugin.getLogger().warning("Error handling event " + eventClass.getSimpleName() + ": " + e.getMessage());
                         }
                     }
                 },
                 plugin
         );
 
-        trackListener(plugin, listener, eventClass);
-
+        trackListener(plugin, listener);
         return listener;
     }
 
-    public static <T extends Event> Listener listenIf(Plugin plugin, Class<T> eventClass, Consumer<T> handler, java.util.function.Predicate<T> condition) {
+    // === CONDITIONAL EVENT REGISTRATION ===
+
+    /**
+     * Registers an event listener that only executes if a condition is met.
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @param condition the condition that must be true for the handler to execute
+     * @return the registered Listener instance
+     */
+    public static <T extends Event> Listener listenIf(Plugin plugin, Class<T> eventClass, Consumer<T> handler, Predicate<T> condition) {
         return listen(plugin, eventClass, event -> {
             if (condition.test(event)) {
                 handler.accept(event);
@@ -64,45 +129,83 @@ public class EventUtil {
         });
     }
 
+    /**
+     * Registers an event listener that ignores cancelled events.
+     * Only executes the handler if the event is not cancelled (for Cancellable events).
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @return the registered Listener instance
+     */
+    public static <T extends Event> Listener listenIgnoreCancelled(Plugin plugin, Class<T> eventClass, Consumer<T> handler) {
+        return listen(plugin, eventClass, event -> {
+            if (event instanceof Cancellable) {
+                Cancellable cancellable = (Cancellable) event;
+                if (!cancellable.isCancelled()) {
+                    handler.accept(event);
+                }
+            } else {
+                handler.accept(event);
+            }
+        });
+    }
+
+    // === LIMITED EXECUTION LISTENERS ===
+
+    /**
+     * Registers an event listener that executes only once, then unregisters itself.
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @return the registered Listener instance
+     */
     public static <T extends Event> Listener listenOnce(Plugin plugin, Class<T> eventClass, Consumer<T> handler) {
         return new OnceListener<>(plugin, eventClass, handler).register();
     }
 
+    /**
+     * Registers an event listener that executes a maximum number of times.
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @param maxTimes the maximum number of times to execute
+     * @return the registered Listener instance, or null if maxTimes is <= 0
+     */
     public static <T extends Event> Listener listenTimes(Plugin plugin, Class<T> eventClass, Consumer<T> handler, int maxTimes) {
+        if (maxTimes <= 0) {
+            return null;
+        }
         return new TimesListener<>(plugin, eventClass, handler, maxTimes).register();
     }
 
+    /**
+     * Registers an event listener that automatically unregisters after a timeout.
+     * 
+     * @param <T> the event type
+     * @param plugin the plugin registering the listener
+     * @param eventClass the event class to listen for
+     * @param handler the handler function to execute
+     * @param timeoutTicks the timeout in ticks after which to unregister
+     * @return the registered Listener instance, or null if timeoutTicks is <= 0
+     */
     public static <T extends Event> Listener listenTimeout(Plugin plugin, Class<T> eventClass, Consumer<T> handler, long timeoutTicks) {
+        if (timeoutTicks <= 0) {
+            return null;
+        }
         return new TimeoutListener<>(plugin, eventClass, handler, timeoutTicks).register();
     }
 
-    @SafeVarargs
-    public static Listener listenMultiple(Plugin plugin, Consumer<Event> handler, Class<? extends Event>... eventClasses) {
-        Listener listener = new Listener() {
-        };
+    // === SPECIALIZED LISTENER CLASSES ===
 
-        for (Class<? extends Event> eventClass : eventClasses) {
-            Bukkit.getPluginManager().registerEvent(
-                    eventClass,
-                    listener,
-                    EventPriority.NORMAL,
-                    (l, event) -> {
-                        if (eventClass.isInstance(event)) {
-                            try {
-                                handler.accept(event);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    },
-                    plugin
-            );
-            trackListener(plugin, listener, eventClass);
-        }
-
-        return listener;
-    }
-
+    /**
+     * Internal listener implementation for one-time event handling.
+     */
     private static class OnceListener<T extends Event> {
         private final Plugin plugin;
         private final Class<T> eventClass;
@@ -116,8 +219,7 @@ public class EventUtil {
         }
 
         public Listener register() {
-            listener = new Listener() {
-            };
+            listener = new Listener() {};
 
             Bukkit.getPluginManager().registerEvent(
                     eventClass,
@@ -127,20 +229,24 @@ public class EventUtil {
                         if (eventClass.isInstance(event)) {
                             try {
                                 handler.accept(eventClass.cast(event));
-                                unregisterListener(listener);
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                plugin.getLogger().warning("Error in once listener: " + e.getMessage());
+                            } finally {
+                                unregisterListener(listener);
                             }
                         }
                     },
                     plugin
             );
 
-            trackListener(plugin, listener, eventClass);
+            trackListener(plugin, listener);
             return listener;
         }
     }
 
+    /**
+     * Internal listener implementation for limited execution count.
+     */
     private static class TimesListener<T extends Event> {
         private final Plugin plugin;
         private final Class<T> eventClass;
@@ -157,8 +263,7 @@ public class EventUtil {
         }
 
         public Listener register() {
-            listener = new Listener() {
-            };
+            listener = new Listener() {};
 
             Bukkit.getPluginManager().registerEvent(
                     eventClass,
@@ -169,23 +274,26 @@ public class EventUtil {
                             try {
                                 handler.accept(eventClass.cast(event));
                                 currentCount++;
-
+                                
                                 if (currentCount >= maxTimes) {
                                     unregisterListener(listener);
                                 }
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                plugin.getLogger().warning("Error in times listener: " + e.getMessage());
                             }
                         }
                     },
                     plugin
             );
 
-            trackListener(plugin, listener, eventClass);
+            trackListener(plugin, listener);
             return listener;
         }
     }
 
+    /**
+     * Internal listener implementation for timeout-based unregistration.
+     */
     private static class TimeoutListener<T extends Event> {
         private final Plugin plugin;
         private final Class<T> eventClass;
@@ -201,8 +309,7 @@ public class EventUtil {
         }
 
         public Listener register() {
-            listener = new Listener() {
-            };
+            listener = new Listener() {};
 
             Bukkit.getPluginManager().registerEvent(
                     eventClass,
@@ -213,38 +320,60 @@ public class EventUtil {
                             try {
                                 handler.accept(eventClass.cast(event));
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                plugin.getLogger().warning("Error in timeout listener: " + e.getMessage());
                             }
                         }
                     },
                     plugin
             );
 
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 unregisterListener(listener);
             }, timeoutTicks);
-
-            trackListener(plugin, listener, eventClass);
+            
+            timeoutTasks.put(listener, task);
+            trackListener(plugin, listener);
             return listener;
         }
     }
 
-    private static void trackListener(Plugin plugin, Listener listener, Class<? extends Event> eventClass) {
+    // === LISTENER MANAGEMENT ===
+
+    /**
+     * Tracks a listener for a specific plugin.
+     * 
+     * @param plugin the plugin that owns the listener
+     * @param listener the listener to track
+     */
+    private static void trackListener(Plugin plugin, Listener listener) {
         pluginListeners.computeIfAbsent(plugin, k -> ConcurrentHashMap.newKeySet()).add(listener);
-        listenerEvents.computeIfAbsent(listener, k -> ConcurrentHashMap.newKeySet()).add(eventClass);
     }
 
+    /**
+     * Unregisters a specific listener and cleans up associated resources.
+     * 
+     * @param listener the listener to unregister
+     */
     public static void unregisterListener(Listener listener) {
-        if (listener != null) {
-            HandlerList.unregisterAll(listener);
+        if (listener == null) return;
 
-            for (Set<Listener> listeners : pluginListeners.values()) {
-                listeners.remove(listener);
-            }
-            listenerEvents.remove(listener);
+        HandlerList.unregisterAll(listener);
+
+        BukkitTask task = timeoutTasks.remove(listener);
+        if (task != null && !task.isCancelled()) {
+            task.cancel();
+        }
+
+        for (Set<Listener> listeners : pluginListeners.values()) {
+            listeners.remove(listener);
         }
     }
 
+    /**
+     * Unregisters all listeners for a specific plugin.
+     * 
+     * @param plugin the plugin whose listeners should be unregistered
+     */
     public static void unregisterAllListeners(Plugin plugin) {
         Set<Listener> listeners = pluginListeners.get(plugin);
         if (listeners != null) {
@@ -255,133 +384,54 @@ public class EventUtil {
         }
     }
 
+    // === INFORMATION METHODS ===
+
+    /**
+     * Gets the number of listeners registered by a plugin.
+     * 
+     * @param plugin the plugin to check
+     * @return the number of registered listeners
+     */
     public static int getListenerCount(Plugin plugin) {
         Set<Listener> listeners = pluginListeners.get(plugin);
         return listeners != null ? listeners.size() : 0;
     }
 
-    public static Set<Class<? extends Event>> getListenedEvents(Plugin plugin) {
-        Set<Listener> listeners = pluginListeners.get(plugin);
-        if (listeners == null) return Collections.emptySet();
-
-        Set<Class<? extends Event>> events = new HashSet<>();
-        for (Listener listener : listeners) {
-            Set<Class<? extends Event>> listenerEvents = EventUtil.listenerEvents.get(listener);
-            if (listenerEvents != null) {
-                events.addAll(listenerEvents);
-            }
-        }
-        return events;
+    /**
+     * Checks if a plugin has any registered listeners.
+     * 
+     * @param plugin the plugin to check
+     * @return true if the plugin has registered listeners, false otherwise
+     */
+    public static boolean hasListeners(Plugin plugin) {
+        return getListenerCount(plugin) > 0;
     }
 
-    public static void printEventStatistics() {
-        System.out.println("=== Event Statistics ===");
+    // === CLEANUP METHODS ===
 
-        for (var entry : eventCounts.entrySet()) {
-            Class<? extends Event> eventClass = entry.getKey();
-            int count = entry.getValue();
-            long totalTime = eventTimes.getOrDefault(eventClass, 0L);
-            double avgTime = count > 0 ? (totalTime / 1_000_000.0) / count : 0;
-
-            System.out.println(String.format("%s: %d calls, avg %.2fms",
-                    eventClass.getSimpleName(), count, avgTime));
-        }
-    }
-
-    public static Map<Class<? extends Event>, Integer> getEventCounts() {
-        return new HashMap<>(eventCounts);
-    }
-
-    public static void clearStatistics() {
-        eventCounts.clear();
-        eventTimes.clear();
-    }
-
-    public static boolean isEventRegistered(Class<? extends Event> eventClass) {
-        return eventCounts.containsKey(eventClass);
-    }
-
-    public static List<Plugin> getPluginsListeningTo(Class<? extends Event> eventClass) {
-        List<Plugin> plugins = new ArrayList<>();
-
-        for (var entry : pluginListeners.entrySet()) {
-            Plugin plugin = entry.getKey();
-            Set<Listener> listeners = entry.getValue();
-
-            for (Listener listener : listeners) {
-                Set<Class<? extends Event>> events = listenerEvents.get(listener);
-                if (events != null && events.contains(eventClass)) {
-                    plugins.add(plugin);
-                    break;
-                }
-            }
-        }
-
-        return plugins;
-    }
-
-    public static void printListenerInfo() {
-        System.out.println("=== Listener Information ===");
-
-        for (var entry : pluginListeners.entrySet()) {
-            Plugin plugin = entry.getKey();
-            Set<Listener> listeners = entry.getValue();
-
-            System.out.println(plugin.getName() + ": " + listeners.size() + " listeners");
-
-            Set<Class<? extends Event>> events = getListenedEvents(plugin);
-            for (Class<? extends Event> event : events) {
-                System.out.println("  - " + event.getSimpleName());
-            }
-        }
-    }
-
-    public static <T extends Event> Listener listenIgnoreCancelled(Plugin plugin, Class<T> eventClass, Consumer<T> handler) {
-        return listen(plugin, eventClass, event -> {
-            if (event instanceof org.bukkit.event.Cancellable) {
-                org.bukkit.event.Cancellable cancellable = (org.bukkit.event.Cancellable) event;
-                if (!cancellable.isCancelled()) {
-                    handler.accept(event);
-                }
-            } else {
-                handler.accept(event);
-            }
-        });
-    }
-
-    public static <T extends Event> Listener listenOnlyCancelled(Plugin plugin, Class<T> eventClass, Consumer<T> handler) {
-        return listen(plugin, eventClass, event -> {
-            if (event instanceof org.bukkit.event.Cancellable) {
-                org.bukkit.event.Cancellable cancellable = (org.bukkit.event.Cancellable) event;
-                if (cancellable.isCancelled()) {
-                    handler.accept(event);
-                }
-            }
-        });
-    }
-
-    public static <T extends Event> Listener listenSafe(Plugin plugin, Class<T> eventClass, Consumer<T> handler, Consumer<Exception> errorHandler) {
-        return listen(plugin, eventClass, event -> {
-            try {
-                handler.accept(event);
-            } catch (Exception e) {
-                if (errorHandler != null) {
-                    errorHandler.accept(e);
-                } else {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
+    /**
+     * Performs cleanup for a specific plugin.
+     * This should be called when a plugin is disabled.
+     * 
+     * @param plugin the plugin to clean up
+     */
     public static void cleanup(Plugin plugin) {
         unregisterAllListeners(plugin);
         pluginListeners.remove(plugin);
     }
 
+    /**
+     * Performs complete cleanup of all tracked listeners and resources.
+     * This should only be called when shutting down the entire system.
+     */
     public static void cleanupAll() {
+        for (BukkitTask task : timeoutTasks.values()) {
+            if (!task.isCancelled()) {
+                task.cancel();
+            }
+        }
+        
+        timeoutTasks.clear();
         pluginListeners.clear();
-        listenerEvents.clear();
-        clearStatistics();
     }
 }
