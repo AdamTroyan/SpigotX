@@ -147,7 +147,7 @@ public class PaginatedGUI implements GUIBase {
          *
          * @param a first ItemStack to compare
          * @param b second ItemStack to compare
-         * @return negative if a < b, zero if a == b, positive if a > b
+         * @return negative if a smaller b, zero if a equals b, positive if a bigger b
          */
         int compare(ItemStack a, ItemStack b);
     }

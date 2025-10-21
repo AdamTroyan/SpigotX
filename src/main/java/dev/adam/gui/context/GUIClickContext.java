@@ -392,7 +392,7 @@ public class GUIClickContext {
 
     /**
      * Sends a message with color code support to the player.
-     * Color codes use the '&' character (e.g., "&aGreen text").
+     * Color codes use the 'and' character (e.g., "Green text").
      * 
      * @param message the message to send (supports color codes)
      */

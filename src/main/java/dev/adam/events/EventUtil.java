@@ -175,7 +175,7 @@ public class EventUtil {
      * @param eventClass the event class to listen for
      * @param handler the handler function to execute
      * @param maxTimes the maximum number of times to execute
-     * @return the registered Listener instance, or null if maxTimes is <= 0
+     * @return the registered Listener instance, or null if maxTimes is small or equal 0
      */
     public static <T extends Event> Listener listenTimes(Plugin plugin, Class<T> eventClass, Consumer<T> handler, int maxTimes) {
         if (maxTimes <= 0) {
@@ -192,7 +192,7 @@ public class EventUtil {
      * @param eventClass the event class to listen for
      * @param handler the handler function to execute
      * @param timeoutTicks the timeout in ticks after which to unregister
-     * @return the registered Listener instance, or null if timeoutTicks is <= 0
+     * @return the registered Listener instance, or null if timeoutTicks is small or equal 0
      */
     public static <T extends Event> Listener listenTimeout(Plugin plugin, Class<T> eventClass, Consumer<T> handler, long timeoutTicks) {
         if (timeoutTicks <= 0) {

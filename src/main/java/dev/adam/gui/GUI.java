@@ -768,7 +768,7 @@ public class GUI implements GUIBase {
 
     /**
      * Creates an ItemStack with display name and lore.
-     * Supports color codes using '&' character.
+     * Supports color codes using 'and' character.
      * 
      * @param material the material type
      * @param name the display name (supports color codes)
