@@ -169,7 +169,6 @@ public class PlaceholderManager {
     public static String parse(Player player, String text) {
         if (text == null || text.isEmpty()) return text;
 
-        // Parse in order of complexity to avoid conflicts
         text = parseMathExpressions(text);
         text = parseParameterizedPlaceholders(player, text);
         text = parseRegularPlaceholders(player, text);
@@ -189,7 +188,6 @@ public class PlaceholderManager {
     public static String parseOffline(OfflinePlayer player, String text) {
         if (text == null || text.isEmpty()) return text;
 
-        // Process offline player placeholders
         for (var entry : offlinePlayerPlaceholders.entrySet()) {
             String placeholder = "{" + entry.getKey() + "}";
             if (text.contains(placeholder)) {
@@ -251,7 +249,6 @@ public class PlaceholderManager {
         while (matcher.find()) {
             String placeholder = matcher.group(1).toLowerCase();
             
-            // Skip if this looks like a parameterized placeholder
             if (placeholder.contains(":")) {
                 continue;
             }
@@ -276,7 +273,6 @@ public class PlaceholderManager {
             String parameters = matcher.group(2);
             String[] params = parameters.split(",");
 
-            // Trim whitespace from parameters
             for (int i = 0; i < params.length; i++) {
                 params[i] = params[i].trim();
             }
@@ -344,7 +340,6 @@ public class PlaceholderManager {
      * This includes player info, server stats, date/time, and utility functions.
      */
     public static void registerBuiltInPlaceholders() {
-        // Player information placeholders
         register("player_name", player -> player != null ? player.getName() : "Unknown");
         register("player_displayname", player -> player != null ? player.getDisplayName() : "Unknown");
         register("player_uuid", player -> player != null ? player.getUniqueId().toString() : "Unknown");
@@ -363,14 +358,12 @@ public class PlaceholderManager {
         });
         register("player_ping", player -> player != null ? String.valueOf(player.getPing()) : "0");
 
-        // Player location placeholders
         register("player_x", player -> player != null ? String.valueOf(player.getLocation().getBlockX()) : "0");
         register("player_y", player -> player != null ? String.valueOf(player.getLocation().getBlockY()) : "0");
         register("player_z", player -> player != null ? String.valueOf(player.getLocation().getBlockZ()) : "0");
         register("player_yaw", player -> player != null ? MONEY_FORMAT.format(player.getLocation().getYaw()) : "0.00");
         register("player_pitch", player -> player != null ? MONEY_FORMAT.format(player.getLocation().getPitch()) : "0.00");
 
-        // Server information placeholders
         registerGlobal("server_name", () -> Bukkit.getServer().getName());
         registerGlobal("server_version", () -> Bukkit.getVersion());
         registerGlobal("server_bukkit_version", () -> Bukkit.getBukkitVersion());
@@ -379,7 +372,6 @@ public class PlaceholderManager {
         registerGlobal("server_motd", () -> Bukkit.getMotd());
         registerGlobal("server_uptime", () -> getUptime());
 
-        // Date and time placeholders
         registerGlobal("date", () -> DATE_FORMAT.format(new Date()));
         registerGlobal("time", () -> new SimpleDateFormat("HH:mm:ss").format(new Date()));
         registerGlobal("timestamp", () -> String.valueOf(System.currentTimeMillis()));
@@ -387,7 +379,6 @@ public class PlaceholderManager {
         registerGlobal("month", () -> String.valueOf(Calendar.getInstance().get(Calendar.MONTH) + 1));
         registerGlobal("day", () -> String.valueOf(Calendar.getInstance().get(Calendar.DAY_OF_MONTH)));
 
-        // Utility parameterized placeholders
         registerParameterized("random", (player, params) -> {
             if (params.length >= 2) {
                 try {
@@ -476,7 +467,6 @@ public class PlaceholderManager {
     private static double evaluateExpression(String expression) {
         expression = expression.replace(" ", "");
 
-        // Handle basic operations in order of precedence
         if (expression.contains("*")) {
             String[] parts = expression.split("\\*", 2);
             return Double.parseDouble(parts[0]) * Double.parseDouble(parts[1]);
@@ -653,7 +643,6 @@ public class PlaceholderManager {
     public static void initialize() {
         registerBuiltInPlaceholders();
 
-        // Set up automatic cache cleanup every minute
         if (Bukkit.getPluginManager().getPlugins().length > 0) {
             Plugin plugin = Bukkit.getPluginManager().getPlugins()[0];
             Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,

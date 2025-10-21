@@ -164,16 +164,13 @@ public class GUIListener implements Listener {
 
         Player player = (Player) event.getWhoClicked();
 
-        // Apply click protection
         if (!isClickAllowed(player)) {
             event.setCancelled(true);
             return;
         }
 
-        // Cancel the event to prevent item movement
         event.setCancelled(true);
 
-        // Validate clicked inventory
         if (event.getClickedInventory() == null) {
             logDebug("Clicked inventory is null for player: " + player.getName());
             return;
@@ -191,7 +188,6 @@ public class GUIListener implements Listener {
                 " in " + gui.getClass().getSimpleName() +
                 " at slot " + rawSlot);
 
-        // Handle the click if a handler exists
         if (gui.hasHandler(rawSlot)) {
             try {
                 gui.handleClick(event);
@@ -243,12 +239,10 @@ public class GUIListener implements Listener {
                 " in " + gui.getClass().getSimpleName());
 
         try {
-            // Handle the close event if the GUI supports it
             if (gui instanceof GUI) {
                 ((GUI) gui).handleClose(event);
             }
 
-            // Clean up player tracking data
             UUID uuid = player.getUniqueId();
             lastClickTime.remove(uuid);
             clickCounts.remove(uuid);
@@ -273,7 +267,6 @@ public class GUIListener implements Listener {
         logDebug("GUI opened: " + gui.getClass().getSimpleName() +
                 " by " + player.getName());
 
-        // Reset click tracking for this player
         UUID uuid = player.getUniqueId();
         lastClickTime.remove(uuid);
         clickCounts.remove(uuid);
@@ -297,7 +290,6 @@ public class GUIListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
 
-        // Clean up all tracking data for the disconnected player
         lastClickTime.remove(uuid);
         clickCounts.remove(uuid);
 
@@ -310,11 +302,9 @@ public class GUIListener implements Listener {
     @EventHandler
     public void onPluginDisable(PluginDisableEvent event) {
         if (event.getPlugin().equals(SpigotX.getPlugin())) {
-            // Clean up all tracking data
             lastClickTime.clear();
             clickCounts.clear();
             
-            // Cancel all GUI updates
             GUIUpdater.cancelAll();
 
             logDebug("Plugin disabled - cleaned up all GUI data");
@@ -344,14 +334,12 @@ public class GUIListener implements Listener {
         UUID uuid = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
 
-        // Check cooldown
         Long lastClick = lastClickTime.get(uuid);
         if (lastClick != null && (currentTime - lastClick) < clickCooldown) {
             logDebug("Click blocked for " + player.getName() + " - cooldown not expired");
             return false;
         }
 
-        // Check rate limiting
         Integer clicks = clickCounts.get(uuid);
         if (clicks == null) clicks = 0;
 
@@ -360,15 +348,13 @@ public class GUIListener implements Listener {
             return false;
         }
 
-        // Update tracking data
         lastClickTime.put(uuid, currentTime);
         clickCounts.put(uuid, clicks + 1);
 
-        // Schedule click count decrement after 1 second
         SpigotX.getPlugin().getServer().getScheduler().runTaskLater(
                 SpigotX.getPlugin(),
                 () -> clickCounts.put(uuid, Math.max(0, clickCounts.getOrDefault(uuid, 0) - 1)),
-                20L // 1 second in ticks
+                20L
         );
 
         return true;

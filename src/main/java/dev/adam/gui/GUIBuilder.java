@@ -786,7 +786,6 @@ public class GUIBuilder implements GUIBase {
         int slot = event.getSlot();
         Player player = (Player) event.getWhoClicked();
 
-        // Check slot permissions
         if (slotPermissions.containsKey(slot) && !player.hasPermission(slotPermissions.get(slot))) {
             player.sendMessage("§cYou don't have permission to use this button.");
             return;

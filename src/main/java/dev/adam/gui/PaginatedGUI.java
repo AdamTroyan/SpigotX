@@ -210,17 +210,16 @@ public class PaginatedGUI implements GUIBase {
      * Theme configuration for customizing GUI appearance.
      */
     public static class GUITheme {
-        /** Background glass pane item */
         public ItemStack glassPane;
-        /** Previous page navigation button */
+
         public ItemStack prevButton;
-        /** Next page navigation button */
+
         public ItemStack nextButton;
-        /** Format string for GUI titles */
+
         public String titleFormat = "%s - Page %d/%d";
-        /** Primary color for text elements */
+
         public ChatColor primaryColor = ChatColor.GRAY;
-        /** Secondary color for text elements */
+
         public ChatColor secondaryColor = ChatColor.DARK_GRAY;
     }
 
@@ -400,6 +399,199 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
+    // === ROW AND SLOT MANAGEMENT ===
+
+    /**
+     * Fills a specific row with the given item and handler if all slots in that row are empty.
+     * 
+     * @param row the row number to fill (0-based, 0 is top row)
+     * @param item the ItemStack to place in empty slots
+     * @param handler the click handler for the items (can be null)
+     */
+    public void fillRowIfEmpty(int row, ItemStack item, Consumer<GUIClickContext> handler) {
+        if (row < 0 || row >= getRows() || item == null) {
+            return;
+        }
+
+        int startSlot = row * 9;
+        int endSlot = Math.min(startSlot + 9, inventory.getSize());
+
+        boolean isEmpty = true;
+        for (int i = startSlot; i < endSlot; i++) {
+            if (inventory.getItem(i) != null && inventory.getItem(i).getType() != Material.AIR) {
+                isEmpty = false;
+                break;
+            }
+        }
+
+        if (isEmpty) {
+            fillRow(row, item, handler);
+        }
+    }
+
+    /**
+     * Fills a specific row with the given item and handler, regardless of current contents.
+     * 
+     * @param row the row number to fill (0-based)
+     * @param item the ItemStack to place in all slots
+     * @param handler the click handler for the items (can be null)
+     */
+    public void fillRow(int row, ItemStack item, Consumer<GUIClickContext> handler) {
+        if (row < 0 || row >= getRows() || item == null) {
+            return;
+        }
+
+        int startSlot = row * 9;
+        int endSlot = Math.min(startSlot + 9, inventory.getSize());
+
+        for (int i = startSlot; i < endSlot; i++) {
+            inventory.setItem(i, item.clone());
+            if (handler != null) {
+                setItemHandler(i, handler);
+            }
+        }
+    }
+
+    /**
+     * Fills the border of the GUI with the specified item and handler.
+     * 
+     * @param item the ItemStack to use for border slots
+     * @param handler the click handler for border items (can be null)
+     */
+    public void fillBorder(ItemStack item, Consumer<GUIClickContext> handler) {
+        if (item == null) return;
+
+        int rows = getRows();
+        int size = inventory.getSize();
+
+        for (int slot = 0; slot < size; slot++) {
+            int row = slot / 9;
+            int col = slot % 9;
+
+            if (row == 0 || row == rows - 1 || col == 0 || col == 8) {
+                inventory.setItem(slot, item.clone());
+                if (handler != null) {
+                    setItemHandler(slot, handler);
+                }
+            }
+        }
+    }
+
+    /**
+     * Fills all empty slots in the GUI with the specified item and handler.
+     * 
+     * @param item the ItemStack to use for empty slots
+     * @param handler the click handler for the items (can be null)
+     */
+    public void fillEmpty(ItemStack item, Consumer<GUIClickContext> handler) {
+        if (item == null) return;
+
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack current = inventory.getItem(i);
+            if (current == null || current.getType() == Material.AIR) {
+                inventory.setItem(i, item.clone());
+                if (handler != null) {
+                    setItemHandler(i, handler);
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets an item and handler for a specific slot.
+     * 
+     * @param slot the slot index to set
+     * @param item the ItemStack to place in the slot
+     * @param handler the click handler for the item (can be null)
+     */
+    public void setItem(int slot, ItemStack item, Consumer<GUIClickContext> handler) {
+        if (slot >= 0 && slot < inventory.getSize()) {
+            inventory.setItem(slot, item);
+            if (handler != null) {
+                setItemHandler(slot, handler);
+            }
+        }
+    }
+
+    /**
+     * Gets the ItemStack at the specified slot.
+     * 
+     * @param slot the slot index to get
+     * @return the ItemStack at the slot, or null if empty or invalid slot
+     */
+    public ItemStack getItem(int slot) {
+        if (slot >= 0 && slot < inventory.getSize()) {
+            return inventory.getItem(slot);
+        }
+        return null;
+    }
+
+    /**
+     * Removes the item and handler from the specified slot.
+     * 
+     * @param slot the slot index to clear
+     */
+    public void removeItem(int slot) {
+        if (slot >= 0 && slot < inventory.getSize()) {
+            inventory.setItem(slot, null);
+            removeHandler(slot);
+        }
+    }
+
+    /**
+     * Sets a click handler for a specific slot.
+     * 
+     * @param slot the slot index to set the handler for
+     * @param handler the click handler (can be null to remove)
+     */
+    public void setItemHandler(int slot, Consumer<GUIClickContext> handler) {
+        if (slot >= 0 && slot < inventory.getSize()) {
+            if (handler != null) {
+                handlers.put(slot, handler);
+            } else {
+                handlers.remove(slot);
+            }
+        }
+    }
+
+    /**
+     * Gets the click handler for a specific slot.
+     * 
+     * @param slot the slot index to get the handler for
+     * @return the click handler, or null if none exists
+     */
+    public Consumer<GUIClickContext> getItemHandler(int slot) {
+        return handlers.get(slot);
+    }
+
+    /**
+     * Checks if a slot has a click handler assigned.
+     * 
+     * @param slot the slot index to check
+     * @return true if a handler exists, false otherwise
+     */
+    public boolean hasItemHandler(int slot) {
+        return handlers.containsKey(slot);
+    }
+
+    /**
+     * Gets the number of rows in the inventory.
+     * 
+     * @return the number of rows
+     */
+    public int getRows() {
+        return inventory.getSize() / 9;
+    }
+
+    /**
+     * Gets the size of the inventory (total number of slots).
+     * 
+     * @return the inventory size
+     */
+    public int getSize() {
+        return inventory.getSize();
+    }
+
     // === NAVIGATION METHODS ===
 
     /**
@@ -410,6 +602,51 @@ public class PaginatedGUI implements GUIBase {
     public void openPage(int page) {
         List<ItemStack> processedItems = getProcessedItems();
         openPageWithItems(page, processedItems);
+    }
+
+    /**
+     * Navigates to the next page if available.
+     * 
+     * @return true if navigation was successful, false if no next page exists
+     */
+    public boolean nextPage() {
+        if (hasNextPage()) {
+            openPage(currentPage + 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Navigates to the previous page if available.
+     * 
+     * @return true if navigation was successful, false if no previous page exists
+     */
+    public boolean previousPage() {
+        if (hasPreviousPage()) {
+            openPage(currentPage - 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Navigates to the first page.
+     */
+    public void firstPage() {
+        if (currentPage != 0) {
+            openPage(0);
+        }
+    }
+
+    /**
+     * Navigates to the last page.
+     */
+    public void lastPage() {
+        int lastPage = getTotalPages() - 1;
+        if (currentPage != lastPage) {
+            openPage(lastPage);
+        }
     }
 
     /**
@@ -447,6 +684,63 @@ public class PaginatedGUI implements GUIBase {
      */
     public int getCurrentPage() {
         return currentPage;
+    }
+
+    /**
+     * Gets the index of the first item displayed on the current page.
+     * 
+     * @return the starting index for current page items
+     */
+    public int getCurrentPageStartIndex() {
+        return currentPage * itemsPerPage;
+    }
+
+    /**
+     * Gets the index of the last item displayed on the current page.
+     * 
+     * @return the ending index for current page items
+     */
+    public int getCurrentPageEndIndex() {
+        if (items == null || items.isEmpty()) return 0;
+        return Math.min(getCurrentPageStartIndex() + itemsPerPage, items.size()) - 1;
+    }
+
+    /**
+     * Gets the number of items displayed on the current page.
+     * 
+     * @return the count of items on current page
+     */
+    public int getCurrentPageItemCount() {
+        if (items == null || items.isEmpty()) return 0;
+        return Math.min(itemsPerPage, items.size() - getCurrentPageStartIndex());
+    }
+
+    /**
+     * Gets the page number that contains the specified item index.
+     * 
+     * @param itemIndex the index of the item to find
+     * @return the page number containing the item, or -1 if index is invalid
+     */
+    public int getPageForIndex(int itemIndex) {
+        if (items == null || itemIndex < 0 || itemIndex >= items.size()) {
+            return -1;
+        }
+        return itemIndex / itemsPerPage;
+    }
+
+    /**
+     * Opens the page containing the specified item index.
+     * 
+     * @param itemIndex the index of the item to navigate to
+     * @return true if navigation was successful, false if index is invalid
+     */
+    public boolean navigateToItem(int itemIndex) {
+        int targetPage = getPageForIndex(itemIndex);
+        if (targetPage >= 0) {
+            openPage(targetPage);
+            return true;
+        }
+        return false;
     }
 
     // === FILTERING METHODS ===
@@ -514,6 +808,24 @@ public class PaginatedGUI implements GUIBase {
         return searchQuery;
     }
 
+    /**
+     * Gets all active filters.
+     * 
+     * @return a copy of the filter list
+     */
+    public List<ItemFilter> getFilters() {
+        return new ArrayList<>(filters);
+    }
+
+    /**
+     * Checks if any filters are currently active.
+     * 
+     * @return true if filters exist, false otherwise
+     */
+    public boolean hasFilters() {
+        return !filters.isEmpty() || !searchQuery.isEmpty();
+    }
+
     // === SORTING METHODS ===
 
     /**
@@ -556,6 +868,13 @@ public class PaginatedGUI implements GUIBase {
      */
     public boolean isSortAscending() {
         return sortAscending;
+    }
+
+    /**
+     * Toggles the sort order between ascending and descending.
+     */
+    public void toggleSortOrder() {
+        setSorting(sortType, !sortAscending);
     }
 
     // === LAYOUT METHODS ===
@@ -601,6 +920,22 @@ public class PaginatedGUI implements GUIBase {
         eventListeners.remove(listener);
     }
 
+    /**
+     * Gets all registered event listeners.
+     * 
+     * @return a copy of the event listener list
+     */
+    public List<GUIEventListener> getEventListeners() {
+        return new ArrayList<>(eventListeners);
+    }
+
+    /**
+     * Clears all event listeners.
+     */
+    public void clearEventListeners() {
+        eventListeners.clear();
+    }
+
     // === THEME SYSTEM ===
 
     /**
@@ -641,6 +976,24 @@ public class PaginatedGUI implements GUIBase {
         return theme;
     }
 
+    /**
+     * Creates a light theme with white glass panes.
+     * 
+     * @return a new light GUITheme
+     */
+    public static GUITheme createLightTheme() {
+        GUITheme theme = new GUITheme();
+        theme.glassPane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
+        ItemMeta meta = theme.glassPane.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            theme.glassPane.setItemMeta(meta);
+        }
+        theme.primaryColor = ChatColor.WHITE;
+        theme.secondaryColor = ChatColor.GRAY;
+        return theme;
+    }
+
     // === CACHE MANAGEMENT ===
 
     /**
@@ -669,6 +1022,15 @@ public class PaginatedGUI implements GUIBase {
      */
     public boolean isCacheEnabled() {
         return cacheEnabled;
+    }
+
+    /**
+     * Gets the current cache size.
+     * 
+     * @return the number of cached content variations
+     */
+    public int getCacheSize() {
+        return contentCache.size();
     }
 
     // === STATISTICS ===
@@ -703,12 +1065,49 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
+     * Sets the number of items per page.
+     * This will recalculate pagination and may change the current page.
+     * 
+     * @param itemsPerPage the new items per page count (must be positive)
+     */
+    public void setItemsPerPage(int itemsPerPage) {
+        if (itemsPerPage > 0 && itemsPerPage != this.itemsPerPage) {
+            int currentItemIndex = getCurrentPageStartIndex();
+            this.itemsPerPage = itemsPerPage;
+            
+            if (currentItemIndex > 0) {
+                this.currentPage = currentItemIndex / itemsPerPage;
+            }
+            
+            refreshContent();
+        }
+    }
+
+    /**
      * Checks if the GUI has been initialized with content.
      * 
      * @return true if initialized, false otherwise
      */
     public boolean isInitialized() {
         return isInitialized;
+    }
+
+    /**
+     * Checks if the GUI currently has any content items.
+     * 
+     * @return true if there are items, false if empty
+     */
+    public boolean hasContent() {
+        return items != null && !items.isEmpty();
+    }
+
+    /**
+     * Gets the total number of content items.
+     * 
+     * @return the total item count
+     */
+    public int getTotalItemCount() {
+        return items != null ? items.size() : 0;
     }
 
     /**
@@ -730,6 +1129,27 @@ public class PaginatedGUI implements GUIBase {
         }
 
         initializeBottomRow();
+    }
+
+    /**
+     * Refreshes the GUI display without changing the current page.
+     * Useful for updating item data or applying new filters.
+     */
+    public void refresh() {
+        refreshContent();
+    }
+
+    /**
+     * Creates a formatted title with page information.
+     * 
+     * @param baseTitle the base title text
+     * @return formatted title with page info
+     */
+    public String getFormattedTitle(String baseTitle) {
+        if (theme != null && theme.titleFormat != null) {
+            return String.format(theme.titleFormat, baseTitle, getCurrentPage() + 1, getTotalPages());
+        }
+        return baseTitle + " - Page " + (getCurrentPage() + 1) + "/" + getTotalPages();
     }
 
     // === GUIBASE IMPLEMENTATION ===
@@ -792,27 +1212,17 @@ public class PaginatedGUI implements GUIBase {
     // === PRIVATE IMPLEMENTATION METHODS ===
 
     /**
-     * Sets a click handler for a specific slot.
-     */
-    private void setItemHandler(int slot, Consumer<GUIClickContext> handler) {
-        if (slot >= 0 && slot < inventory.getSize()) {
-            if (handler != null) {
-                handlers.put(slot, handler);
-            } else {
-                handlers.remove(slot);
-            }
-        }
-    }
-
-    /**
      * Removes a click handler for a specific slot.
+     * 
+     * @param slot the slot index to remove the handler from
      */
     private void removeHandler(int slot) {
         handlers.remove(slot);
     }
 
     /**
-     * Refreshes the displayed content and navigation.
+     * Refreshes the displayed content and navigation buttons.
+     * Processes all filters, sorting, and search queries before updating the display.
      */
     private void refreshContent() {
         List<ItemStack> processedItems = getProcessedItems();
@@ -821,7 +1231,8 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Refreshes only the click handlers for content items.
+     * Refreshes only the click handlers for content items on the current page.
+     * Used to update handlers when the main item action changes.
      */
     private void refreshContentHandlers() {
         if (items == null || items.isEmpty()) return;
@@ -843,7 +1254,8 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Updates the navigation buttons based on current page.
+     * Updates the navigation buttons (previous/next) based on current page state.
+     * Places buttons in the bottom row at positions 3 and 5, or glass panes if navigation unavailable.
      */
     private void updateNavigationButtons() {
         int lastRowStart = inventory.getSize() - 9;
@@ -853,7 +1265,7 @@ public class PaginatedGUI implements GUIBase {
         removeHandler(lastRowStart + 3);
         removeHandler(lastRowStart + 5);
 
-        // Previous button
+        // Previous button (slot 3 of bottom row)
         if (currentPage > 0 && prevButton != null) {
             inventory.setItem(lastRowStart + 3, prevButton);
             setItemHandler(lastRowStart + 3, ctx -> {
@@ -866,7 +1278,6 @@ public class PaginatedGUI implements GUIBase {
             setItemHandler(lastRowStart + 3, ctx -> {});
         }
 
-        // Next button
         if (currentPage < maxPage && nextButton != null) {
             inventory.setItem(lastRowStart + 5, nextButton);
             setItemHandler(lastRowStart + 5, ctx -> {
@@ -881,7 +1292,7 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Clears all content items from the display area.
+     * Clears all items and handlers from the content area (excludes bottom navigation row).
      */
     private void clearContentArea() {
         int lastRowStart = inventory.getSize() - 9;
@@ -892,7 +1303,9 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Creates the default theme with gray glass panes.
+     * Creates the default theme with gray glass panes and standard formatting.
+     * 
+     * @return a new GUITheme with default settings
      */
     private GUITheme createDefaultTheme() {
         GUITheme theme = new GUITheme();
@@ -906,7 +1319,10 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Gets processed items after applying filters, search, and sorting.
+     * Gets processed items after applying all filters, search queries, and sorting.
+     * Uses caching to improve performance when the same processing has been done before.
+     * 
+     * @return the processed list of ItemStacks ready for display
      */
     private List<ItemStack> getProcessedItems() {
         if (items == null) return new ArrayList<>();
@@ -927,6 +1343,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Applies all registered filters to the item list.
+     * 
+     * @param items the list of items to filter
+     * @return a new list containing only items that pass all filters
      */
     private List<ItemStack> getFilteredItems(List<ItemStack> items) {
         if (filters.isEmpty()) return items;
@@ -952,6 +1371,10 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Applies search query filtering to the item list.
+     * Filters based on item display name or material name.
+     * 
+     * @param items the list of items to search through
+     * @return a new list containing only items matching the search query
      */
     private List<ItemStack> getSearchedItems(List<ItemStack> items) {
         if (searchQuery.isEmpty()) return items;
@@ -963,6 +1386,9 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Checks if an item matches the current search query.
+     * 
+     * @param item the ItemStack to test against the search query
+     * @return true if the item matches the search, false otherwise
      */
     private boolean matchesSearch(ItemStack item) {
         if (searchQuery.isEmpty()) return true;
@@ -976,7 +1402,10 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Applies sorting to the item list based on current sort settings.
+     * Sorts the item list according to the current sort type and order.
+     * 
+     * @param items the list of items to sort
+     * @return a new sorted list of ItemStacks
      */
     private List<ItemStack> getSortedItems(List<ItemStack> items) {
         List<ItemStack> sorted = new ArrayList<>(items);
@@ -1006,14 +1435,18 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Generates a cache key for the current filter/sort/search state.
+     * Generates a unique cache key based on current filter, sort, and search settings.
+     * 
+     * @return a string key for caching processed content
      */
     private String getCacheKey() {
         return searchQuery + "|" + sortType + "|" + sortAscending + "|" + filters.size();
     }
 
     /**
-     * Gets cached content if available and caching is enabled.
+     * Retrieves cached content if caching is enabled and content exists.
+     * 
+     * @return cached processed items, or null if not found or caching disabled
      */
     private List<ItemStack> getCachedContent() {
         if (!cacheEnabled) return null;
@@ -1021,7 +1454,9 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Stores processed content in the cache.
+     * Stores processed content in the cache for future retrieval.
+     * 
+     * @param content the processed content list to cache
      */
     private void setCachedContent(List<ItemStack> content) {
         if (cacheEnabled && content != null) {
@@ -1030,7 +1465,8 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Applies the current theme to the GUI.
+     * Applies the current theme settings to the GUI appearance.
+     * Updates glass pane and navigation button styles, then refreshes content.
      */
     private void applyTheme() {
         if (theme == null || !isInitialized) return;
@@ -1048,7 +1484,11 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Opens a specific page with the given processed items.
+     * Opens a specific page with the provided item list.
+     * Handles page validation, content placement, and event firing.
+     * 
+     * @param page the page number to open (0-based)
+     * @param itemsList the processed list of items to display
      */
     private void openPageWithItems(int page, List<ItemStack> itemsList) {
         if (itemsList == null || itemsList.isEmpty()) {
@@ -1099,6 +1539,10 @@ public class PaginatedGUI implements GUIBase {
 
     /**
      * Gets slot positions based on the specified layout pattern.
+     * 
+     * @param pattern the layout pattern to use
+     * @param itemCount the number of items to place
+     * @return an array of slot indices for item placement
      */
     private int[] getSlotsByPattern(LayoutPattern pattern, int itemCount) {
         int lastRowStart = inventory.getSize() - 9;
@@ -1120,7 +1564,11 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Gets slots for grid layout (standard left-to-right, top-to-bottom).
+     * Gets slots for grid layout (standard left-to-right, top-to-bottom filling).
+     * 
+     * @param itemCount the number of items to place
+     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @return an array of slot indices in grid order
      */
     private int[] getGridSlots(int itemCount, int maxSlot) {
         List<Integer> slots = new ArrayList<>();
@@ -1131,7 +1579,11 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Gets slots for list layout (single column, centered).
+     * Gets slots for list layout (single column, centered vertically).
+     * 
+     * @param itemCount the number of items to place
+     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @return an array of slot indices in list order
      */
     private int[] getListSlots(int itemCount, int maxSlot) {
         List<Integer> slots = new ArrayList<>();
@@ -1146,7 +1598,11 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Gets slots for centered layout (from center outward).
+     * Gets slots for centered layout (from center outward in spiral pattern).
+     * 
+     * @param itemCount the number of items to place
+     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @return an array of slot indices in centered order
      */
     private int[] getCenteredSlots(int itemCount, int maxSlot) {
         List<Integer> slots = new ArrayList<>();
@@ -1164,7 +1620,11 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Gets slots for border layout (edges first).
+     * Gets slots for border layout (edges first, then inward).
+     * 
+     * @param itemCount the number of items to place
+     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @return an array of slot indices prioritizing border positions
      */
     private int[] getBorderSlots(int itemCount, int maxSlot) {
         List<Integer> slots = new ArrayList<>();
@@ -1173,7 +1633,7 @@ public class PaginatedGUI implements GUIBase {
             int row = i / 9;
             int col = i % 9;
 
-            // Check if on border (first/last row or first/last column)
+            // Check if slot is on border (first/last row or first/last column)
             if (row == 0 || row == 5 || col == 0 || col == 8) {
                 slots.add(i);
             }
@@ -1182,7 +1642,11 @@ public class PaginatedGUI implements GUIBase {
     }
 
     /**
-     * Gets slots for checkerboard layout (alternating pattern).
+     * Gets slots for checkerboard layout (alternating pattern like a chess board).
+     * 
+     * @param itemCount the number of items to place
+     * @param maxSlot the maximum slot index (excluding navigation row)
+     * @return an array of slot indices in checkerboard pattern
      */
     private int[] getCheckerboardSlots(int itemCount, int maxSlot) {
         List<Integer> slots = new ArrayList<>();
@@ -1191,7 +1655,7 @@ public class PaginatedGUI implements GUIBase {
             int row = i / 9;
             int col = i % 9;
 
-            // Checkerboard pattern
+            // Checkerboard pattern: sum of row and column is even
             if ((row + col) % 2 == 0) {
                 slots.add(i);
             }
@@ -1201,6 +1665,12 @@ public class PaginatedGUI implements GUIBase {
 
     // === EVENT FIRING METHODS ===
 
+    /**
+     * Fires page change events to all registered listeners.
+     * 
+     * @param oldPage the previous page number
+     * @param newPage the new current page number
+     */
     private void firePageChangeEvent(int oldPage, int newPage) {
         for (GUIEventListener listener : eventListeners) {
             try {
@@ -1211,6 +1681,13 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
+    /**
+     * Fires item click events to all registered listeners.
+     * 
+     * @param item the ItemStack that was clicked
+     * @param slot the slot number where the click occurred
+     * @param clickType the type of click performed
+     */
     private void fireItemClickEvent(ItemStack item, int slot, ClickType clickType) {
         for (GUIEventListener listener : eventListeners) {
             try {
@@ -1221,6 +1698,12 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
+    /**
+     * Fires content change events to all registered listeners.
+     * 
+     * @param oldItems the previous item list
+     * @param newItems the new item list
+     */
     private void fireContentChangeEvent(List<ItemStack> oldItems, List<ItemStack> newItems) {
         for (GUIEventListener listener : eventListeners) {
             try {
@@ -1231,6 +1714,11 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
+    /**
+     * Fires GUI open events to all registered listeners.
+     * 
+     * @param player the player who opened the GUI
+     */
     private void fireGUIOpenEvent(Player player) {
         for (GUIEventListener listener : eventListeners) {
             try {
@@ -1241,6 +1729,11 @@ public class PaginatedGUI implements GUIBase {
         }
     }
 
+    /**
+     * Fires GUI close events to all registered listeners.
+     * 
+     * @param player the player who closed the GUI
+     */
     private void fireGUICloseEvent(Player player) {
         for (GUIEventListener listener : eventListeners) {
             try {
